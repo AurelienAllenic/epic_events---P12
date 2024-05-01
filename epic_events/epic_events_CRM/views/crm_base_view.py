@@ -325,19 +325,19 @@ class BaseView:
 
         # Create a table to display contract details
         table = Table(title="Contract Detail",
-                      show_header=True,
-                      header_style="bold blue",
-                      show_lines=True)
+                    show_header=True,
+                    header_style="bold blue",
+                    show_lines=True)
 
         table.add_column("Field", style="dim", width=20)
         table.add_column("Value", width=40)
 
         # Add rows to the table with contract details
         table.add_row("Contract ID", str(contract.id))
-        table.add_row("Client Information", contract.client.full_name + " - " + contract.client.email)
-        table.add_row("Sales Contact", contract.sales_contact.get_full_name() if contract.sales_contact else "N/A")
-        table.add_row("Total Amount", str(contract.total_amount))
-        table.add_row("Amount Remaining", str(contract.amount_remaining))
+        table.add_row("Client Information", contract.client_infos.name + " - " + contract.client_infos.email)
+        table.add_row("Commercial Contact", contract.commercial_contact.get_full_name() if contract.commercial_contact else "N/A")
+        table.add_row("Total Amount", str(contract.value))
+        table.add_row("Amount Remaining", str(contract.due))
         table.add_row("Creation Date", contract.creation_date.strftime("%Y-%m-%d"))
         table.add_row("Status", "Signed" if contract.status == "signed" else "Not Signed")
 
@@ -377,11 +377,11 @@ class BaseView:
 
         # Add rows to the table with client details
         table.add_row("Client ID", str(client.id))
-        table.add_row("Full Name", client.full_name)
+        table.add_row("name", client.name)
         table.add_row("Email", client.email)
         table.add_row("Phone", client.phone)
         table.add_row("Company Name", client.company_name)
-        table.add_row("Sales Contact", client.sales_contact.get_full_name() if client.sales_contact else "N/A")
+        table.add_row("Commercial Contact", client.commercial_contact.get_full_name() if client.commercial_contact else "N/A")
 
         # Print the table
         console.print(table, justify="center")

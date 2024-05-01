@@ -56,7 +56,7 @@ class CRMFunctions:
             if object_type.lower() == "collaborators":
                 return Collaborator.objects.all()
             elif object_type.lower() == "contracts":
-                return Contract.objects.all()
+                return Client.objects.all()
             elif object_type.lower() == "events":
                 return Evenement.objects.all()
             else:
@@ -173,3 +173,28 @@ class CRMFunctions:
             raise DatabaseError(f"Problem with database access") from e
         except Exception as e:
             raise Exception("Unexpected error deleting collaborator") from e
+        
+    @staticmethod
+    def create_contract(client_infos: Client, commercial_contact: Collaborator, value: float,
+                        due: float, status: str) -> Contract:
+        try:
+            contract = Contract(
+                client_infos=client_infos,
+                commercial_contact=commercial_contact,
+                value=value,
+                due=due,
+                status=status
+            )
+            # Save the contract to the database
+            contract.save()
+
+            if status == 'signed':
+                print(f"Contract signed with client {client_infos.id} with sales contact {commercial_contact.id}")
+
+            return contract
+        except ValidationError as e:
+            raise ValidationError(f"Validation error: {e}")
+        except DatabaseError as e:
+            raise DatabaseError("Problem with database access") from e
+        except Exception as e:
+            raise Exception("Unequal error retrieving contracts.") from e

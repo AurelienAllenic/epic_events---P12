@@ -138,11 +138,58 @@ class ManagementController:
                     self.view_cli.display_error_message(str(e))
                     break
         elif object_type.lower() == "contracts":
-            print("Contract creation not implemented yet.")
-            # Implement contract creation logic here
+            self.view_cli.clear_screen()
+            print(f"Creating contract for client... of type {object_type}...")
+            # Retrieve all clients
+            clients = CRMFunctions.get_all_objects(object_type)
+
+            print(f'the clients are {clients}')
+
+            # If no clients available, return
+            if not clients:
+                print("No clients for the moment")
+                return
+
+            # Select a client for contract creation
+            selected_client = self.select_object_from(clients, object_type)
+
+            # If no client selected, return
+            if not selected_client:
+                return print("No client selected.")
+
+            # Create a contract for the selected client
+            self.create_contract_for(selected_client)
         else:
             print("Invalid object type specified.")
             return
+
+    def create_contract_for(self, client: Client) -> None:
+        print('create function atteinte')
+        self.view_cli.clear_screen()
+        self.view_cli.display_client_details(client)
+        print(client)
+        self.view_cli.display_info_message(f"You are creating a new contract for: {client.name}")
+
+        # Get contract data from the user
+        data_contract = self.view_cli.get_data_for_create_contract()
+        data_contract["client_infos"] = client
+        data_contract["commercial_contact"] = client.commercial_contact
+
+        try:
+            # Create the contract using CRM service
+            new_contract = self.services_crm.create_contract(**data_contract)
+            self.view_cli.display_info_message("Contract created successfully.")
+            self.view_cli.display_contract_details(new_contract)
+
+        except ValidationError as e:
+            # Handle validation error
+            self.view_cli.display_error_message(f"Validation error: {e}")
+        except DatabaseError:
+            # Handle database error
+            self.view_cli.display_error_message("A database error occurred. Please try again later.")
+        except Exception as e:
+            # Handle unexpected error
+            self.view_cli.display_error_message(f"An unexpected error occurred: {e}")
 
 
     def instance_modification(self, object_type: str) -> None:

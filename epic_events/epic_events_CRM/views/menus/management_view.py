@@ -175,13 +175,13 @@ class ManagementView(BaseView):
     def get_data_for_create_contract(self) -> dict:
         self.display_info_message("Please provide the following information for the new contract:")
 
-        total_amount = self.get_valid_decimal_input("Total Amount (e.g., 9999.99)")
-        amount_remaining = self.get_valid_decimal_input("Amount Remaining (e.g., 9999.99)")
+        value = self.get_valid_decimal_input("Total Amount (e.g., 9999.99)")
+        due = self.get_valid_decimal_input("Amount Remaining (e.g., 9999.99)")
         status = self.get_valid_choice("Status (Options: signed, not_signet)", ["signed", "not_signed"])
 
         contract_data = {
-            "total_amount": total_amount,
-            "amount_remaining": amount_remaining,
+            "value": value,
+            "due": due,
             "status": status
         }
 
