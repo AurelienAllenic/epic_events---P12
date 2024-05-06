@@ -6,7 +6,8 @@ django.setup()
 
 from django.contrib.auth.models import Group, Permission
 from django.contrib.auth.hashers import make_password
-from crm.models import Collaborator, Client, Role
+from crm.models import Collaborator, Client, Role, Contract, Evenement
+from datetime import date
 
 # Réinitialiser la base de données avant de relancer la création des gourpes et users
 django.db.connections['default'].cursor().execute('SET FOREIGN_KEY_CHECKS=0')
@@ -114,3 +115,36 @@ clients_data = [
 
 for client_data in clients_data:
     create_client(**client_data)
+
+def create_event(name, client_name, client_contact, day_start, date_end, support_contact_username, location, attendees, notes):
+    # Recherche du client par nom
+    try:
+        client = Client.objects.get(name=client_name)
+    except Client.DoesNotExist:
+        print(f"Client '{client_name}' not found.")
+        return
+    
+    # Recherche du contact de support par nom d'utilisateur
+    try:
+        support_contact = Collaborator.objects.get(username=support_contact_username)
+    except Collaborator.DoesNotExist:
+        print(f"Support contact '{support_contact_username}' not found.")
+        return
+
+    # Création de l'événement
+    event = Evenement.objects.create(
+        name=name,
+        client_id=client,
+        client_name=client_name,
+        client_contact=client_contact,
+        day_start=day_start,
+        date_end=date_end,
+        support_contact=support_contact,
+        location=location,
+        attendees=attendees,
+        notes=notes
+    )
+    print(f"Event '{event}' created successfully.")
+    return event
+
+create_event("first event", "first client", "John Doe", date(2024, 5, 10), date(2024, 5, 11), "emmaStone", "Paris", 50, "Meeting with client")

@@ -1,9 +1,10 @@
-from crm.models import Collaborator, Contract, Client
+from crm.models import Collaborator, Contract, Client, Evenement
 from services.crm_functions import CRMFunctions
 from views.menus.management_view import ManagementView
 from django.core.exceptions import ValidationError
 from typing import Any, List, Optional
 from django.db import DatabaseError
+from django.db.models.query import QuerySet
 
 class ManagementController:
     MAIN_MENU_OPTIONS = [
@@ -57,7 +58,7 @@ class ManagementController:
             case 3:
                 self.manage_management_objects("Events")
             case 4:
-                pass
+                self.modify_support_contact()
             case 5:
                 self.show_all_management_objects("Clients")
             case 6:
@@ -172,7 +173,8 @@ class ManagementController:
         else:
             print("Invalid object type specified.")
             return
-        
+
+
     def select_client_from(self, clients: List[Client]) -> Optional[Client]:
 
         self.view_cli.clear_screen()
@@ -193,6 +195,7 @@ class ManagementController:
             self.view_cli.display_error_message("We couldn't find the client. Please try again later.")
 
         return selected_client
+
 
     def create_contract_for(self, client: Client) -> None:
         print('create function atteinte')
@@ -259,7 +262,8 @@ class ManagementController:
             self.view_cli.display_error_message(f"We couldn't find the {object_type}. Please try again later.")
 
         return selected_object
-    
+
+
     def select_contract_from(self, contracts: List[Contract]) -> Optional[Contract]:
         self.view_cli.clear_screen()
         self.view_cli.display_contracts_for_selection(contracts)
@@ -349,6 +353,7 @@ class ManagementController:
 
         self.delete_collaborator(select_collaborator)
 
+
     def delete_collaborator(self, collaborator: Collaborator) -> None:
         self.view_cli.clear_screen()
         self.view_cli.display_item_details(collaborator)
@@ -366,3 +371,107 @@ class ManagementController:
             self.view_cli.display_error_message("A problem occurred with the database. Please try again later.")
         except Exception as e:
             self.view_cli.display_error_message(f"An unexpected error occurred: {e}")
+
+
+    def modify_support_contact(self) -> None:
+        self.view_cli.clear_screen()
+
+        events = self.get_events_with_optional_filter(support_contact_required=None)
+        if not events:
+            return
+
+        selected_event = self.select_object_from(events, object_type="Event")
+        if not selected_event:
+            return
+
+        support_collaborators = self.get_support_collaborators()
+        if not support_collaborators:
+            return
+
+        selected_support_collaborator = self.select_collaborator_from(support_collaborators,
+                                                                    "Select the new support contact "
+                                                                    "for the event")
+
+        event_with_new_support_collaborator = self.add_support_contact_to_event(selected_event,
+                                                                                selected_support_collaborator)
+
+        self.view_cli.display_event_details(event_with_new_support_collaborator)
+
+
+        self.view_cli.display_info_message(f"The support contact {selected_support_collaborator.get_full_name()}"
+                                        f" has been correctly assigned to the event.")
+
+
+    def get_events_with_optional_filter(self, support_contact_required: Optional[bool] = None) -> List[Evenement]:
+        try:
+            events = self.services_crm.get_all_events_with_optional_filter(support_contact_required)
+        except DatabaseError:
+            self.view_cli.display_error_message("I encountered a problem with the database. Please try again later.")
+            return []
+        except Exception as e:
+            self.view_cli.display_error_message(f"{e}")
+            return []
+
+        if not events:
+            self.view_cli.display_info_message("There are no events available to display.")
+
+        return events
+
+
+    def get_support_collaborators(self) -> List[Collaborator]:
+        try:
+            support_collaborators = self.services_crm.get_support_collaborators()
+        except DatabaseError:
+            self.view_cli.display_error_message("I encountered a problem with the database. Please try again later.")
+            return []
+        except Exception as e:
+            self.view_cli.display_error_message(str(e))
+            return []
+
+        if not support_collaborators:
+            self.view_cli.display_info_message("There not support collaborators to display.")
+
+        return support_collaborators
+
+
+    @staticmethod
+    def get_support_collaborators() -> QuerySet[Collaborator]:
+        try:
+            support_collaborators = Collaborator.objects.filter(role__name="support")
+            return support_collaborators
+        except DatabaseError as e:
+            raise DatabaseError("Problem with database access") from e
+        except Exception as e:
+            raise Exception("Unexpected error retrieving collaborators.") from e
+
+
+    def select_collaborator_from(self, list_of_collaborators: List[Collaborator],
+                                message: Optional[str] = None) -> Optional[Collaborator]:
+        self.view_cli.clear_screen()
+
+        self.view_cli.display_objects_for_selection(list_of_collaborators, object_type="Collaborator")
+
+        if message:
+            self.view_cli.display_info_message(message)
+
+        collaborators_ids = [collaborator.id for collaborator in list_of_collaborators]
+
+        selected_collaborator_id = self.view_cli.prompt_for_selection_by_id(collaborators_ids, "Collaborator")
+
+        selected_collaborator = next((collaborator for collaborator in list_of_collaborators
+                                    if collaborator.id == selected_collaborator_id), None)
+
+        if not selected_collaborator:
+            self.view_cli.display_error_message("We couldn't find the collaborator. Please try again later.")
+
+        return selected_collaborator
+
+
+    def add_support_contact_to_event(self, event: Evenement, support_contact: Collaborator) -> Evenement:
+        try:
+            event_with_new_support_contact = self.services_crm.add_support_contact_to_event(event, support_contact)
+            return event_with_new_support_contact
+        except DatabaseError:
+            self.view_cli.display_error_message("I encountered a problem with the database. Please try again later.")
+        except Exception as e:
+            self.view_cli.display_error_message(str(e))

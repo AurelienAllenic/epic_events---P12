@@ -9,6 +9,7 @@ from django.db import DatabaseError
 from django.db.models import Model
 from typing import List, Optional, Any
 from django.contrib.auth.models import Group
+from django.db.models import QuerySet
 
 
 class CRMFunctions:
@@ -218,3 +219,56 @@ class CRMFunctions:
             raise DatabaseError("Problem with database access") from e
         except Exception as e:
             raise Exception("Unexpected error modifying contracts.") from e
+
+
+    @staticmethod
+    def get_support_collaborators() -> QuerySet[Collaborator]:
+        """
+        Retrieve all collaborators with the 'support' role from the database.
+
+        Returns:
+            A QuerySet of Collaborator instances who have the 'support' role.
+        Raises:
+            DatabaseError: If there's a problem accessing the database.
+            Exception: If an unexpected error occurs.
+        """
+        try:
+            support_collaborators = Collaborator.objects.filter(role__name="support")
+            return support_collaborators
+        except DatabaseError as e:
+            raise DatabaseError("Problem with database access") from e
+        except Exception as e:
+            raise Exception("Unexpected error retrieving collaborators.") from e
+
+    @staticmethod
+    def get_all_events_with_optional_filter(support_contact_required: Optional[bool] = None) -> QuerySet[Evenement]:
+        try:
+            events = Evenement.objects.all()
+            match support_contact_required:
+                case None:
+                    return events
+                case True:
+                    events = events.exclude(support_contact__isnull=True)
+                    return events
+                case False:
+                    events = events.filter(support_contact__isnull=True)
+                    return events
+        except DatabaseError as e:
+            raise DatabaseError("Problem with the database access during the retrieval of events.") from e
+        except Exception as e:
+            raise Exception("Unexpected error occurred while retrieving events.") from e
+
+
+    @staticmethod
+    def add_support_contact_to_event(event: Evenement, support_contact: Collaborator) -> Evenement:
+        try:
+            event.support_contact = support_contact
+            event.full_clean()
+            event.save()
+
+            return event
+
+        except DatabaseError as e:
+            raise DatabaseError("Problem with the database access during the support contact assignment") from e
+        except Exception as e:
+            raise Exception("Unexpected error occurred during the support contact assignment") from e

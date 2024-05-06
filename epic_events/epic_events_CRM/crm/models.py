@@ -34,6 +34,7 @@ class Contract(models.Model):
 
 
 class Evenement(models.Model):
+    name = models.CharField(max_length = 255, null = True)
     client_id = models.ForeignKey(Client, on_delete=models.CASCADE)
     client_name = models.CharField(max_length=100)
     client_contact = models.CharField(max_length=100)
