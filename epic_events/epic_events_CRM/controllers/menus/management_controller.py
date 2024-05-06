@@ -79,11 +79,11 @@ class ManagementController:
             return
 
         if object_type.lower() == "clients":
-            self.view_cli.display_list_of_clients(objects)
+            self.view_cli.display_list(objects, object_type)
         elif object_type.lower() == "contracts" or object_type.lower() == "contracts2":
-            self.view_cli.display_list_of_contracts(objects)
+            self.view_cli.display_list(objects, "contracts")
         elif object_type.lower() == "events":
-            self.view_cli.display_list_of_events(objects)
+            self.view_cli.display_list(objects, object_type)
 
 
     def manage_management_objects(self, object_type: str) -> None:

@@ -52,7 +52,6 @@ class BaseView:
                 self.display_error_message(f"Invalid {model_name} ID. Please choose from the list.")
 
 
-
     @staticmethod
     def clear_screen() -> None:
         click.clear()
@@ -82,123 +81,74 @@ class BaseView:
         message_text = Text(message, style="bold yellow")
         console.print(message_text)
 
-    @staticmethod
-    def display_list_of_events(events: List[Evenement]) -> None:
-
-        # Create console instance.
+    def display_list(self, objects: List, object_type: str) -> None:
         console = Console()
+        table = Table(title=f"List of all {object_type}", show_header=True, header_style="bold magenta", expand=True)
 
-        # Create table
-        table = Table(title="List of Events",
-                      show_header=True,
-                      header_style="bold magenta",
-                      expand=True,
-                      show_lines=True)
+        # Create columns based on object type
+        if object_type.lower() == "events":
+            table.add_column("ID", style="dim", width=10)
+            table.add_column("Contract ID", style="dim", width=12)
+            table.add_column("Name", style="dim", width=12)
+            table.add_column("Client Name", style="dim", width=20)
+            table.add_column("Support Contact", style="dim", width=20)
+            table.add_column("Start Date", style="dim", width=20)
+            table.add_column("End Date", style="dim", width=20)
+            table.add_column("Location", style="dim", width=25)
+            table.add_column("Attendees", justify="right", style="dim", width=12)
+            table.add_column("Notes", style="dim", width=30)
+        elif object_type.lower() == "clients":
+            print('nous sommes dans le cas d"un client')
+            table.add_column("Full Name", style="dim", width=20)
+            table.add_column("Email", style="dim", width=20)
+            table.add_column("Phone", justify="right", style="dim", width=12)
+            table.add_column("Company Name", style="dim", width=20)
+            table.add_column("Creation Date", style="dim", width=20)
+        elif object_type.lower() == "contracts":
+            table.add_column("ID", style="dim", width=10)
+            table.add_column("Client Name", style="dim", width=20)
+            table.add_column("Sales Contact", style="dim", width=20)
+            table.add_column("Total Amount", justify="right", style="dim", width=12)
+            table.add_column("Amount Remaining", justify="right", style="dim", width=15)
+            table.add_column("Creation Date", style="dim", width=20)
+            table.add_column("Status", style="dim", width=15)
+        else:
+            console.print("Unsupported object type.")
+            return
 
-        table.add_column("ID", style="dim", width=10)
-        table.add_column("Contract ID", style="dim", width=12)
-        table.add_column("Name", style="dim", width=12)
-        table.add_column("Client Name", style="dim", width=20)
-        table.add_column("Support Contact", style="dim", width=20)
-        table.add_column("Start Date", style="dim", width=20)
-        table.add_column("End Date", style="dim", width=20)
-        table.add_column("Location", style="dim", width=25)
-        table.add_column("Attendees", justify="right", style="dim", width=12)
-        table.add_column("Notes", style="dim", width=30)
-
-        # Fill the table with events' data
-        for event in events:
-            event_name = event.name if event.name else "No Named"
-            contract_id = str(event.contract.id) if event.contract else "No Contract"
-            client_name = event.client_name
-            support_contact_name = event.support_contact.get_full_name() if event.support_contact else ("No Contact "
-                                                                                                        "Assigned")
-            start_date = event.start_date.strftime("%Y-%m-%d %H:%M")
-            end_date = event.end_date.strftime("%Y-%m-%d %H:%M")
-            location = event.location
-            attendees = str(event.attendees)
-            notes = event.notes if event.notes else "No Notes"
-
-            table.add_row(
-                str(event.id),
-                contract_id,
-                event_name,
-                client_name,
-                support_contact_name,
-                start_date,
-                end_date,
-                location,
-                attendees,
-                notes
-            )
-
-        console.print(table)
-
-    @staticmethod
-    def display_list_of_clients(clients: List[Client]) -> None:
-        console = Console()
-
-        table = Table(title="List of all Clients",
-                      show_header=True,
-                      header_style="bold magenta",
-                      expand=True,
-                      box=ROUNDED)
-
-        table.add_column("Full Name", style="dim", width=20)
-        table.add_column("Email", style="dim", width=20)
-        table.add_column("Phone", justify="right", style="dim", width=12)
-        table.add_column("Company Name", style="dim", width=20)
-        table.add_column("Creation Date", style="dim", width=20)
-
-        # Fill the table with clients' data
-        for client in clients:
-            table.add_row(
-                client.name,
-                client.email,
-                client.phone,
-                client.company_name,
-                client.creation_date.strftime("%Y-%m-%d %H:%M")
-            )
-
-        # Print the table using Rich
-        console.print(table)
-
-    @staticmethod
-    def display_list_of_contracts(contracts: List[Contract]) -> None:
-
-        # Create console instance.
-        console = Console()
-
-        # Create table
-        table = Table(title="List of all Contracts", show_header=True, header_style="bold magenta", expand=True)
-        table.add_column("ID", style="dim", width=10)
-        table.add_column("Client Name", style="dim", width=20)
-        table.add_column("Sales Contact", style="dim", width=20)
-        table.add_column("Total Amount", justify="right", style="dim", width=12)
-        table.add_column("Amount Remaining", justify="right", style="dim", width=15)
-        table.add_column("Creation Date", style="dim", width=20)
-        table.add_column("Status", style="dim", width=15)
-
-        # Fill the table with contracts' data
-        # Fill the table with contracts' data
-        for contract in contracts:
-            print('=======>', contract)
-            client_name = contract.client_infos.name if contract.client_infos else "No Client Assigned"
-            sales_contact_name = contract.commercial_contact.get_full_name() if contract.commercial_contact else "No Contact Assigned"
-            total_amount = f"${contract.value:.2f}"
-            amount_remaining = f"${contract.due:.2f}"
-            creation_date = contract.creation_date.strftime("%Y-%m-%d %H:%M")
-            status = contract.status
-
-            table.add_row(
-                str(contract.id),
-                client_name,
-                sales_contact_name,
-                total_amount,
-                amount_remaining,
-                creation_date,
-                status
-            )
+        # Fill the table with objects' data
+        for obj in objects:
+            if object_type.lower() == "events":
+                table.add_row(
+                    str(obj.id),
+                    str(obj.contract.id) if obj.contract else "No Contract",
+                    obj.name if obj.name else "No Named",
+                    obj.client_name,
+                    obj.support_contact.get_full_name() if obj.support_contact else "No Contact Assigned",
+                    obj.start_date.strftime("%Y-%m-%d %H:%M"),
+                    obj.end_date.strftime("%Y-%m-%d %H:%M"),
+                    obj.location,
+                    str(obj.attendees),
+                    obj.notes if obj.notes else "No Notes"
+                )
+            elif object_type.lower() == "clients":
+                table.add_row(
+                    obj.name,
+                    obj.email,
+                    obj.phone,
+                    obj.company_name,
+                    obj.creation_date.strftime("%Y-%m-%d %H:%M")
+                )
+            elif object_type.lower() == "contracts":
+                table.add_row(
+                    str(obj.id),
+                    obj.client_infos.name if obj.client_infos else "No Client Assigned",
+                    obj.commercial_contact.get_full_name() if obj.commercial_contact else "No Contact Assigned",
+                    f"${obj.value:.2f}",
+                    f"${obj.due:.2f}",
+                    obj.creation_date.strftime("%Y-%m-%d %H:%M"),
+                    obj.status
+                )
 
         # Print the table using Rich
         console.print(table)
