@@ -57,6 +57,8 @@ class CRMFunctions:
                 return Collaborator.objects.all()
             elif object_type.lower() == "contracts":
                 return Client.objects.all()
+            elif object_type.lower() == "contracts2":
+                return Contract.objects.all()
             elif object_type.lower() == "events":
                 return Evenement.objects.all()
             else:
@@ -198,3 +200,21 @@ class CRMFunctions:
             raise DatabaseError("Problem with database access") from e
         except Exception as e:
             raise Exception("Unequal error retrieving contracts.") from e
+
+    @staticmethod
+    def modify_contract(contract: Contract, modifications: dict) -> Contract:
+        try:
+            for key, value in modifications.items():
+                setattr(contract, key, value)
+
+            contract.full_clean()
+            contract.save()
+            print('heres the contract', contract)
+            return contract
+
+        except ValidationError as e:
+            raise ValidationError(f"Validation error while modifying the contract: {e}")
+        except DatabaseError as e:
+            raise DatabaseError("Problem with database access") from e
+        except Exception as e:
+            raise Exception("Unexpected error modifying contracts.") from e

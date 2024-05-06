@@ -74,7 +74,6 @@ class ManagementController:
         self.view_cli.clear_screen()
 
         objects = CRMFunctions.get_all_objects(object_type)
-
         if not objects:
             print(f"No {object_type} found.")
             return
@@ -109,10 +108,16 @@ class ManagementController:
             case 2:
                 self.instance_modification(object_type)
             case 3:
-                self.instance_deletion(object_type)
+                if object_type.lower() == "contracts":
+                    self.start()
+                else:
+                    self.instance_deletion(object_type)
             case 4:
-                print(4)
-                self.start()
+                if(object_type.lower() != "contracts"):
+                    self.start()
+                print("Invalid option selected. Please try again.")
+                self.view_cli.display_info_message("Invalid option selected. Please try again.")
+                return
             case _:
                 print("Invalid option selected. Please try again.")
                 self.view_cli.display_info_message("Invalid option selected. Please try again.")
@@ -142,16 +147,21 @@ class ManagementController:
             print(f"Creating contract for client... of type {object_type}...")
             # Retrieve all clients
             clients = CRMFunctions.get_all_objects(object_type)
-
+            contracts = CRMFunctions.get_all_objects("contracts2")
             print(f'the clients are {clients}')
+            print(f'the contracts are {contracts}')
 
             # If no clients available, return
             if not clients:
                 print("No clients for the moment")
                 return
+            
+            if not contracts:
+                print("No contracts for the moment")
+                return
 
             # Select a client for contract creation
-            selected_client = self.select_object_from(clients, object_type)
+            selected_client = self.select_client_from(clients)
 
             # If no client selected, return
             if not selected_client:
@@ -162,12 +172,32 @@ class ManagementController:
         else:
             print("Invalid object type specified.")
             return
+        
+    def select_client_from(self, clients: List[Client]) -> Optional[Client]:
+
+        self.view_cli.clear_screen()
+        self.view_cli.display_clients_for_selection(clients)
+        self.view_cli.display_info_message("Please select the client to whom you want to assign "
+                                           "the contract you are about create.")
+        # Extract client IDs for selection
+        clients_ids = [client.id for client in clients]
+
+        # Prompt user to select a client by ID
+        selected_client_id = self.view_cli.prompt_for_selection_by_id(clients_ids, "Client")
+
+        # Find the selected client by ID
+        selected_client = next((client for client in clients if client.id == selected_client_id), None)
+
+        # If no client is found, display error message
+        if not selected_client:
+            self.view_cli.display_error_message("We couldn't find the client. Please try again later.")
+
+        return selected_client
 
     def create_contract_for(self, client: Client) -> None:
         print('create function atteinte')
         self.view_cli.clear_screen()
         self.view_cli.display_client_details(client)
-        print(client)
         self.view_cli.display_info_message(f"You are creating a new contract for: {client.name}")
 
         # Get contract data from the user
@@ -193,8 +223,12 @@ class ManagementController:
 
 
     def instance_modification(self, object_type: str) -> None:
+        print('nous sommes dans la modif')
         self.view_cli.clear_screen()
-        our_objects = CRMFunctions.get_all_objects(object_type)
+        if object_type.lower() == "contracts":
+            our_objects = CRMFunctions.get_all_objects("contracts2")
+        else:
+            our_objects = CRMFunctions.get_all_objects(object_type)
 
         if not our_objects:
             return
@@ -210,7 +244,7 @@ class ManagementController:
     def select_object_from(self, list_of_objects: List[Any], object_type: str, message: Optional[str] = None) -> Optional[Any]:
         self.view_cli.clear_screen()
 
-        self.view_cli.display_objects_for_selection(list_of_objects)
+        self.view_cli.display_objects_for_selection(list_of_objects, object_type)
 
         if message:
             self.view_cli.display_info_message(message)
@@ -225,13 +259,60 @@ class ManagementController:
             self.view_cli.display_error_message(f"We couldn't find the {object_type}. Please try again later.")
 
         return selected_object
+    
+    def select_contract_from(self, contracts: List[Contract]) -> Optional[Contract]:
+        self.view_cli.clear_screen()
+        self.view_cli.display_contracts_for_selection(contracts)
+        self.view_cli.display_info_message("Please select the contract you wish modify.")
+
+        contracts_ids = [contract.id for contract in contracts]
+
+        selected_contract_id = self.view_cli.prompt_for_selection_by_id(contracts_ids, "Contract")
+        selected_contract = next((contract for contract in contracts if contract.id == selected_contract_id), None)
+
+        if not selected_contract:
+            self.view_cli.display_error_message("We couldn't find the contract. Please try again later.")
+
+        return selected_contract
 
 
     def modify_object(self, selected_item: Any) -> None:
+        self.view_cli.print_something()
+        print('print dans modify')
         if isinstance(selected_item, Client):
             print("Client modification not implemented yet.")
         elif isinstance(selected_item, Contract):
-            print("Contract modification not implemented yet.")
+            
+            self.view_cli.clear_screen()
+
+            # Displays the details of the selected contract.
+            self.view_cli.display_item_details(selected_item)
+
+            # Gets contract data for modification from the user.
+            contract_data = self.view_cli.get_data_for_modify_contract()
+
+            if not contract_data:
+                # If no modifications were made, inform the user and return.
+                self.view_cli.display_info_message("No modifications were made.")
+                return
+            
+            try:
+                # Attempts to modify the contract using the provided data.
+                contract_modified = self.services_crm.modify_contract(selected_item, contract_data)
+                self.view_cli.clear_screen()
+
+                # Displays the details of the modified contract
+                self.view_cli.display_contract_details(contract_modified)
+
+                # Informs the user that the contract has been modified successfully.
+                self.view_cli.display_info_message("The contract has been modified successfully.")
+                return
+            except ValidationError as e:
+                self.view_cli.display_error_message(str(e))
+            except DatabaseError:
+                self.view_cli.display_error_message("I encountered a problem with the database. Please try again later.")
+            except Exception as e:
+                self.view_cli.display_error_message(str(e))
         elif isinstance(selected_item, Collaborator):
             print("Colaborator modification.", {selected_item})
             while True:

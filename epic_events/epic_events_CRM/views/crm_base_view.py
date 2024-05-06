@@ -356,7 +356,7 @@ class BaseView:
 
         # Fill the table with clients data
         for client in clients:
-            client_name = client.full_name if client.full_name else "No Name"
+            client_name = client.name if client.name else "No Name"
 
             table.add_row(
                 str(client.id),

@@ -7,14 +7,16 @@ from colorama import Fore, Style
 from django.db.models.query import QuerySet
 from typing import List, TypeVar
 from django.db import DatabaseError
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 from typing import TypeVar
 from django.core.exceptions import ValidationError
 from django.contrib.auth import authenticate
 from django.db.models.query import QuerySet
 from django.db import DatabaseError
 from django.db.models import Model
-from crm.models import Collaborator
+from crm.models import Collaborator, Contract
+from django.db.models.fields.related import ForeignKey
+from django.contrib.auth import get_user_model
 
 
 ModelType = TypeVar("ModelType")
@@ -94,51 +96,100 @@ class ManagementView(BaseView):
             return password
 
 
-    def display_item_details(self, collaborator: Collaborator) -> None:
+    def display_item_details(self, item: Any) -> None:
         self.clear_screen()
         console = Console()
 
-        # Create a table to display collaborator details
-        table = Table(title = "Collaborator Detail", show_header = True, header_style = "bold blue", show_lines = True)
-        table.add_column("Field", style = "dim", width = 20)
-        table.add_column("Value", width = 40)
+        # Create a table to display item details
+        table = Table(title="Item Detail", show_header=True, header_style="bold blue", show_lines=True)
+        table.add_column("Field", style="dim", width=20)
+        table.add_column("Value", width=40)
 
-        # Add rows to the table with collaborator details
-        table.add_row("Collaborator ID", str(collaborator.id))
-        table.add_row("First Name", collaborator.first_name)
-        table.add_row("Last Name", collaborator.last_name)
-        table.add_row("Username", collaborator.username)
-        table.add_row("Email", collaborator.email)
-        table.add_row("Employee Number", collaborator.employee_number)
-        table.add_row("Role", collaborator.role.name if collaborator.role else "N/A")
+        # Add rows to the table with item details
+        if isinstance(item, Collaborator):
+            print('nous sommes dans le cas d"un collaborator')
+            table.add_row("Item Type", "Collaborator")
+            table.add_row("Collaborator ID", str(item.id))
+            table.add_row("First Name", item.first_name)
+            table.add_row("Last Name", item.last_name)
+            table.add_row("Username", item.username)
+            table.add_row("Email", item.email)
+            table.add_row("Employee Number", item.employee_number)
+            table.add_row("Role", item.role.name if item.role else "N/A")
+        elif isinstance(item, Contract):
+            print('nous sommes dans le cas d"un contrat', {item})
+            table.add_row("Item Type", "Contract")
+            table.add_row("Contract ID", str(item.id))
+            table.add_row("Client", item.client_infos.name if item.client_infos else "No Name")
+            table.add_row("Sales Contact", item.commercial_contact.get_full_name() if item.commercial_contact else "N/A")
+            table.add_row("Total Amount", str(item.value))
+            table.add_row("Amount Remaining", str(item.due))
+            table.add_row("Status", item.status)
+        else:
+            print("Unsupported item type for display:", type(item))
+            return
 
         # Print the table
-        console.print(table, justify = "center")
+        console.print(table, justify="center")
 
-    def display_objects_for_selection(self, objects: List[ModelType]) -> None:
+    def display_objects_for_selection(self, objects: List[ModelType], object_type: str) -> None:
         self.clear_screen()
-        for(obj) in objects:
-            print(obj, 'object')
-        # Create console instance
         console = Console()
+        if object_type.lower() == "collaborators":
+            # Create table for collaborators
+            table = Table(show_header=True, header_style="bold magenta", expand=True)
 
-        # Create table
-        table = Table(show_header=True, header_style="bold magenta", expand=True)
+            # Determine fields of the object
+            fields = objects[0]._meta.fields if objects else []
 
-        # Determine fields of the object
-        fields = objects[0]._meta.fields if objects else []
+            # Add columns to the table based on the fields of the object
+            for field in fields:
+                table.add_column(field.name.capitalize(), style="dim", width=20)
 
-        # Add columns to the table based on the fields of the object
-        for field in fields:
-            table.add_column(field.name.capitalize(), style="dim", width=20)
+            # Fill the table with objects data
+            for obj in objects:
+                row = []
+                for field in fields:
+                    if field.is_relation:
+                        related_obj = getattr(obj, field.name)
+                        if related_obj:
+                            if field.name == 'commercial_contact':
+                                user_model = get_user_model()
+                                related_user = user_model.objects.get(id=related_obj.id)
+                                row.append(related_user.get_full_name())
+                            else:
+                                row.append(str(related_obj))
+                        else:
+                            row.append("N/A")
+                    else:
+                        row.append(str(getattr(obj, field.name)) if getattr(obj, field.name) is not None else "N/A")
+                table.add_row(*row)
 
-        # Fill the table with objects data
-        for obj in objects:
-            row = [str(getattr(obj, field.name)) if getattr(obj, field.name) is not None else "N/A" for field in fields]
-            table.add_row(*row)
+            # Print the table for collaborators using Rich
+            console.print(table)
+        elif object_type.lower() == "contracts":
+            print(objects, 'objects')
+            # Create table for contracts
+            table = Table(title="List of Available Contracts", show_header=True, header_style="bold magenta",
+                        expand=True)
+            table.add_column("Contract ID", style="dim", width=12)
+            table.add_column("Client Name", width=20)
+            table.add_column("Status", width=12)
 
-        # Print the table using Rich
-        console.print(table)
+            # Fill the table with contracts data
+            for contract in objects:  # Utilisation des contrats passés en tant qu'objects
+                self.display_info_message(f"Voici le supposé contract: {contract}")
+                client_name = contract.client_infos.name if contract.client_infos else "No Name"
+                status = contract.status
+
+                table.add_row(
+                    str(contract.id),
+                    client_name,
+                    status
+                )
+
+            # Print the table for contracts using Rich
+            console.print(table)
 
     def get_data_for_modify_collaborator(self, full_name: str) -> dict:
         self.display_info_message(f"Modifying collaborator: {full_name}. "
@@ -191,18 +242,21 @@ class ManagementView(BaseView):
         modification_data = {}
         self.display_info_message("Modifying contract... "
                                 "Please leave blank any field you do not wish to modify")
-        total_amount = self.get_valid_decimal_input("Total Amount (e.g., 9999.99)", allow_blank=True)
-        if total_amount:
-            modification_data["total_amount"] = total_amount
+        value = self.get_valid_decimal_input("Total Amount (e.g., 9999.99)", allow_blank=True)
+        if value:
+            modification_data["value"] = value
 
-        amount_remaining = self.get_valid_decimal_input("Amount Remaining (e.g., 9999.99)", allow_blank=True)
-        if amount_remaining:
-            modification_data["amount_remaining"] = amount_remaining
+        due = self.get_valid_decimal_input("Amount Remaining (e.g., 9999.99)", allow_blank=True)
+        if due:
+            modification_data["due"] = due
 
         status = self.get_valid_choice("Status (Options: signed, not_signed)",
                                     ["signed", "not_signed"],
                                     allow_blank=True)
         if status:
             modification_data["status"] = status
-
         return modification_data
+
+
+    def print_something(self):
+        print("something")
