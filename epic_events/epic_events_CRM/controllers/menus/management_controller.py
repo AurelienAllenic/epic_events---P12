@@ -59,9 +59,9 @@ class ManagementController:
             case 4:
                 pass
             case 5:
-                self.show_all_management_objects("Collaborators")
+                self.show_all_management_objects("Clients")
             case 6:
-                self.show_all_management_objects("Contracts")
+                self.show_all_management_objects("Contracts2")
             case 7:
                 self.show_all_management_objects("Events")
             case 8:
@@ -72,15 +72,15 @@ class ManagementController:
 
     def show_all_management_objects(self, object_type: str) -> None:
         self.view_cli.clear_screen()
-
+        print('==============', object_type, '==============')
         objects = CRMFunctions.get_all_objects(object_type)
         if not objects:
             print(f"No {object_type} found.")
             return
 
-        if object_type.lower() == "collaborators":
+        if object_type.lower() == "clients":
             self.view_cli.display_list_of_clients(objects)
-        elif object_type.lower() == "contracts":
+        elif object_type.lower() == "contracts" or object_type.lower() == "contracts2":
             self.view_cli.display_list_of_contracts(objects)
         elif object_type.lower() == "events":
             self.view_cli.display_list_of_events(objects)
@@ -89,7 +89,7 @@ class ManagementController:
     def manage_management_objects(self, object_type: str) -> None:
         self.view_cli.clear_screen()
 
-        if object_type.lower() == "collaborators":
+        if object_type.lower() == "collaborators" or object_type.lower() == "clients":
             self.view_cli.show_menu(self.collaborator.get_full_name(), self.SUB_MENU_MANAGE_COLLABORATORS)
             choice = self.view_cli.get_collaborator_choice(limit=len(self.SUB_MENU_MANAGE_COLLABORATORS))
         elif object_type.lower() == "contracts":

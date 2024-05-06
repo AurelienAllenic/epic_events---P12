@@ -55,7 +55,7 @@ class CRMFunctions:
         try:
             if object_type.lower() == "collaborators":
                 return Collaborator.objects.all()
-            elif object_type.lower() == "contracts":
+            elif object_type.lower() == "contracts" or object_type.lower() == "clients":
                 return Client.objects.all()
             elif object_type.lower() == "contracts2":
                 return Contract.objects.all()

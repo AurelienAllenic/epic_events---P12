@@ -180,16 +180,15 @@ class BaseView:
         table.add_column("Status", style="dim", width=15)
 
         # Fill the table with contracts' data
+        # Fill the table with contracts' data
         for contract in contracts:
-            client_name = contract.client.full_name if contract.client else "No Client Assigned"
-            sales_contact_name = contract.sales_contact.get_full_name() if contract.sales_contact else ("No Contact "
-                                                                                                        "Assigned")
-            total_amount = f"${contract.total_amount:.2f}"
-            amount_remaining = f"${contract.amount_remaining:.2f}"
+            print('=======>', contract)
+            client_name = contract.client_infos.name if contract.client_infos else "No Client Assigned"
+            sales_contact_name = contract.commercial_contact.get_full_name() if contract.commercial_contact else "No Contact Assigned"
+            total_amount = f"${contract.value:.2f}"
+            amount_remaining = f"${contract.due:.2f}"
             creation_date = contract.creation_date.strftime("%Y-%m-%d %H:%M")
-
-            # get_status_display() to get the human-readable version of a ChoiceField
-            status = contract.get_status_display()
+            status = contract.status
 
             table.add_row(
                 str(contract.id),
