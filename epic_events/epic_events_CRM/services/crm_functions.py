@@ -223,15 +223,6 @@ class CRMFunctions:
 
     @staticmethod
     def get_support_collaborators() -> QuerySet[Collaborator]:
-        """
-        Retrieve all collaborators with the 'support' role from the database.
-
-        Returns:
-            A QuerySet of Collaborator instances who have the 'support' role.
-        Raises:
-            DatabaseError: If there's a problem accessing the database.
-            Exception: If an unexpected error occurs.
-        """
         try:
             support_collaborators = Collaborator.objects.filter(role__name="support")
             return support_collaborators

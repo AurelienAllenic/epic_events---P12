@@ -84,7 +84,7 @@ class BaseView:
     def display_list(self, objects: List, object_type: str) -> None:
         console = Console()
         table = Table(title=f"List of all {object_type}", show_header=True, header_style="bold magenta", expand=True)
-
+        print('object_type', object_type)
         # Create columns based on object type
         if object_type.lower() == "events":
             table.add_column("ID", style="dim", width=10)
@@ -125,8 +125,8 @@ class BaseView:
                     obj.name if obj.name else "No Named",
                     obj.client_name,
                     obj.support_contact.get_full_name() if obj.support_contact else "No Contact Assigned",
-                    obj.start_date.strftime("%Y-%m-%d %H:%M"),
-                    obj.end_date.strftime("%Y-%m-%d %H:%M"),
+                    obj.day_start.strftime("%Y-%m-%d %H:%M"),
+                    obj.date_end.strftime("%Y-%m-%d %H:%M"),
                     obj.location,
                     str(obj.attendees),
                     obj.notes if obj.notes else "No Notes"

@@ -89,7 +89,7 @@ class ManagementController:
 
     def manage_management_objects(self, object_type: str) -> None:
         self.view_cli.clear_screen()
-
+        choice = None
         if object_type.lower() == "collaborators" or object_type.lower() == "clients":
             self.view_cli.show_menu(self.collaborator.get_full_name(), self.SUB_MENU_MANAGE_COLLABORATORS)
             choice = self.view_cli.get_collaborator_choice(limit=len(self.SUB_MENU_MANAGE_COLLABORATORS))
@@ -98,32 +98,60 @@ class ManagementController:
             choice = self.view_cli.get_collaborator_choice(limit=len(self.SUB_MENU_MANAGE_CONTRACTS))
         elif object_type.lower() == "events":
             self.view_cli.show_menu(self.collaborator.get_full_name(), self.SUB_MENU_EVENTS)
-            choice = self.view_cli.get_collaborator_choice(limit=len(self.SUB_MENU_EVENTS))
+            choiceEvent = self.view_cli.get_collaborator_choice(limit=len(self.SUB_MENU_EVENTS))
         else:
             print(f"Invalid object type specified : {object_type}.")
             return
-
-        match choice:
-            case 1:
-                self.instance_creation(object_type)
-            case 2:
-                self.instance_modification(object_type)
-            case 3:
-                if object_type.lower() == "contracts":
+        if choice != None:
+            match choice:
+                case 1:
+                    print("choice 1")
+                    self.instance_creation(object_type)
+                case 2:
+                    self.instance_modification(object_type)
+                case 3:
+                    if object_type.lower() == "contracts":
+                        self.start()
+                    else:
+                        self.instance_deletion(object_type)
+                case 4:
+                    if(object_type.lower() != "contracts"):
+                        self.start()
+                    print("Nous ne devrions pas voir celà.")
+                    return
+                case _:
+                    print("Invalid option selected. Please try again.")
+                    self.view_cli.display_info_message("Invalid option selected. Please try again.")
+                    return
+        else:
+            match choiceEvent:
+                case 1:
+                    self.show_events_with_support()
+                case 2:
+                    self.show_events_without_support()
+                case 3:
                     self.start()
-                else:
-                    self.instance_deletion(object_type)
-            case 4:
-                if(object_type.lower() != "contracts"):
-                    self.start()
-                print("Invalid option selected. Please try again.")
-                self.view_cli.display_info_message("Invalid option selected. Please try again.")
-                return
-            case _:
-                print("Invalid option selected. Please try again.")
-                self.view_cli.display_info_message("Invalid option selected. Please try again.")
-                return
+                case _:
+                    print("Invalid option selected. Please try again.")
+                    self.view_cli.display_info_message("Invalid option selected. Please try again.")
+                    return
 
+    def show_events_with_support(self) -> None:
+        events_to_show = self.get_events_with_optional_filter(support_contact_required=True)
+
+        if not events_to_show:
+            return
+
+        self.view_cli.display_list(events_to_show, "events")
+
+
+    def show_events_without_support(self) -> None:
+        events_to_show = self.get_events_with_optional_filter(support_contact_required=False)
+
+        if not events_to_show:
+            return
+        
+        self.view_cli.display_list(events_to_show, "events")
 
     def instance_creation(self, object_type: str) -> None:
         if object_type.lower() == "collaborators":
@@ -146,29 +174,17 @@ class ManagementController:
         elif object_type.lower() == "contracts":
             self.view_cli.clear_screen()
             print(f"Creating contract for client... of type {object_type}...")
-            # Retrieve all clients
             clients = CRMFunctions.get_all_objects(object_type)
-            contracts = CRMFunctions.get_all_objects("contracts2")
             print(f'the clients are {clients}')
-            print(f'the contracts are {contracts}')
-
-            # If no clients available, return
             if not clients:
                 print("No clients for the moment")
                 return
-            
-            if not contracts:
-                print("No contracts for the moment")
-                return
 
-            # Select a client for contract creation
             selected_client = self.select_client_from(clients)
 
-            # If no client selected, return
             if not selected_client:
                 return print("No client selected.")
 
-            # Create a contract for the selected client
             self.create_contract_for(selected_client)
         else:
             print("Invalid object type specified.")
@@ -226,7 +242,6 @@ class ManagementController:
 
 
     def instance_modification(self, object_type: str) -> None:
-        print('nous sommes dans la modif')
         self.view_cli.clear_screen()
         if object_type.lower() == "contracts":
             our_objects = CRMFunctions.get_all_objects("contracts2")
@@ -282,33 +297,22 @@ class ManagementController:
 
     def modify_object(self, selected_item: Any) -> None:
         self.view_cli.print_something()
-        print('print dans modify')
         if isinstance(selected_item, Client):
             print("Client modification not implemented yet.")
         elif isinstance(selected_item, Contract):
             
             self.view_cli.clear_screen()
-
-            # Displays the details of the selected contract.
             self.view_cli.display_item_details(selected_item)
-
-            # Gets contract data for modification from the user.
             contract_data = self.view_cli.get_data_for_modify_contract()
 
             if not contract_data:
-                # If no modifications were made, inform the user and return.
                 self.view_cli.display_info_message("No modifications were made.")
                 return
             
             try:
-                # Attempts to modify the contract using the provided data.
                 contract_modified = self.services_crm.modify_contract(selected_item, contract_data)
                 self.view_cli.clear_screen()
-
-                # Displays the details of the modified contract
                 self.view_cli.display_contract_details(contract_modified)
-
-                # Informs the user that the contract has been modified successfully.
                 self.view_cli.display_info_message("The contract has been modified successfully.")
                 return
             except ValidationError as e:
@@ -432,17 +436,6 @@ class ManagementController:
             self.view_cli.display_info_message("There not support collaborators to display.")
 
         return support_collaborators
-
-
-    @staticmethod
-    def get_support_collaborators() -> QuerySet[Collaborator]:
-        try:
-            support_collaborators = Collaborator.objects.filter(role__name="support")
-            return support_collaborators
-        except DatabaseError as e:
-            raise DatabaseError("Problem with database access") from e
-        except Exception as e:
-            raise Exception("Unexpected error retrieving collaborators.") from e
 
 
     def select_collaborator_from(self, list_of_collaborators: List[Collaborator],
