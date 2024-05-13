@@ -9,13 +9,13 @@ from django.db.models.query import QuerySet
 class ManagementController:
     MAIN_MENU_OPTIONS = [
         "1 - Manipulate collaborators data in the CRM system.",
-        "2 - Manipulate contract.",
+        "2 - Manipulate contracts.",
         "3 - Filter events based on whether they have or don't have a support contact.",
         "4 - Assign or change the 'support' collaborator associated with an event.",
         "5 - View the list of all clients.",
         "6 - View the list of all contracts.",
         "7 - View the list of all events.",
-        "8 - Exit the CRM system."
+        "8 - Exit the CRM."
     ]
 
     SUB_MENU_MANAGE_COLLABORATORS = [
@@ -36,6 +36,7 @@ class ManagementController:
         "2 - View events without support contact assigned.",
         "3 - Return to main menu"
     ]
+
 
     def __init__(self, collaborator: Collaborator,
                 services_crm: CRMFunctions,
@@ -73,7 +74,6 @@ class ManagementController:
 
     def show_all_management_objects(self, object_type: str) -> None:
         self.view_cli.clear_screen()
-        print('==============', object_type, '==============')
         objects = CRMFunctions.get_all_objects(object_type)
         if not objects:
             print(f"No {object_type} found.")
@@ -136,6 +136,7 @@ class ManagementController:
                     self.view_cli.display_info_message("Invalid option selected. Please try again.")
                     return
 
+
     def show_events_with_support(self) -> None:
         events_to_show = self.get_events_with_optional_filter(support_contact_required=True)
 
@@ -152,6 +153,7 @@ class ManagementController:
             return
         
         self.view_cli.display_list(events_to_show, "events")
+
 
     def instance_creation(self, object_type: str) -> None:
         if object_type.lower() == "collaborators":
@@ -194,7 +196,7 @@ class ManagementController:
     def select_client_from(self, clients: List[Client]) -> Optional[Client]:
 
         self.view_cli.clear_screen()
-        self.view_cli.display_clients_for_selection(clients)
+        self.view_cli.display_objects_for_selection(clients)
         self.view_cli.display_info_message("Please select the client to whom you want to assign "
                                            "the contract you are about create.")
         # Extract client IDs for selection
@@ -216,7 +218,7 @@ class ManagementController:
     def create_contract_for(self, client: Client) -> None:
         print('create function atteinte')
         self.view_cli.clear_screen()
-        self.view_cli.display_client_details(client)
+        self.view_cli.display_object_details(client)
         self.view_cli.display_info_message(f"You are creating a new contract for: {client.name}")
 
         # Get contract data from the user
@@ -228,7 +230,7 @@ class ManagementController:
             # Create the contract using CRM service
             new_contract = self.services_crm.create_contract(**data_contract)
             self.view_cli.display_info_message("Contract created successfully.")
-            self.view_cli.display_contract_details(new_contract)
+            self.view_cli.display_object_details(new_contract)
 
         except ValidationError as e:
             # Handle validation error
@@ -260,43 +262,26 @@ class ManagementController:
 
 
     def select_object_from(self, list_of_objects: List[Any], object_type: str, message: Optional[str] = None) -> Optional[Any]:
+        print('on rentre dans la fonction select object from')
         self.view_cli.clear_screen()
-
         self.view_cli.display_objects_for_selection(list_of_objects, object_type)
 
         if message:
             self.view_cli.display_info_message(message)
 
         objects_ids = [obj.id for obj in list_of_objects]
-
+        print('object type dans select object from', object_type)
         selected_object_id = self.view_cli.prompt_for_selection_by_id(objects_ids, object_type)
 
         selected_object = next((obj for obj in list_of_objects if obj.id == selected_object_id), None)
 
         if not selected_object:
             self.view_cli.display_error_message(f"We couldn't find the {object_type}. Please try again later.")
-
+        print(f"Selected object: {selected_object}")
         return selected_object
-
-
-    def select_contract_from(self, contracts: List[Contract]) -> Optional[Contract]:
-        self.view_cli.clear_screen()
-        self.view_cli.display_contracts_for_selection(contracts)
-        self.view_cli.display_info_message("Please select the contract you wish modify.")
-
-        contracts_ids = [contract.id for contract in contracts]
-
-        selected_contract_id = self.view_cli.prompt_for_selection_by_id(contracts_ids, "Contract")
-        selected_contract = next((contract for contract in contracts if contract.id == selected_contract_id), None)
-
-        if not selected_contract:
-            self.view_cli.display_error_message("We couldn't find the contract. Please try again later.")
-
-        return selected_contract
-
+    
 
     def modify_object(self, selected_item: Any) -> None:
-        self.view_cli.print_something()
         if isinstance(selected_item, Client):
             print("Client modification not implemented yet.")
         elif isinstance(selected_item, Contract):
@@ -312,7 +297,7 @@ class ManagementController:
             try:
                 contract_modified = self.services_crm.modify_contract(selected_item, contract_data)
                 self.view_cli.clear_screen()
-                self.view_cli.display_contract_details(contract_modified)
+                self.view_cli.display_object_details(contract_modified)
                 self.view_cli.display_info_message("The contract has been modified successfully.")
                 return
             except ValidationError as e:
@@ -342,6 +327,37 @@ class ManagementController:
                     break
         else:
             print("Unsupported item type for modification:", type(selected_item))
+
+
+    def modify_support_contact(self) -> None:
+        self.view_cli.clear_screen()
+
+        events = self.get_events_with_optional_filter(support_contact_required=None)
+        if not events:
+            return
+        print(events, 'events')
+        selected_event = self.select_object_from(events, object_type="Events")
+        if not selected_event:
+            return
+
+        support_collaborators = self.get_support_collaborators()
+        print(support_collaborators, "le type de support_collaborators")
+        if not support_collaborators:
+            return
+        
+        selected_support_collaborator = self.select_object_from(support_collaborators,
+                                                            "collaborators")
+        print("selected_support_collaborator", selected_support_collaborator)
+        print(type(selected_event), 'le type de selected event')
+        print(selected_event, 'selected event')
+        event_with_new_support_collaborator = self.add_support_contact_to_event(selected_event,
+                                                                                selected_support_collaborator)
+        print(event_with_new_support_collaborator, "le type de event_with_new_support_collaborator")
+        self.view_cli.display_object_details(event_with_new_support_collaborator)
+
+
+        self.view_cli.display_info_message(f"The support contact {selected_support_collaborator.get_full_name()}"
+                                        f" has been correctly assigned to the event.")
 
 
     def instance_deletion(self, object_type: str) -> None:
@@ -377,35 +393,6 @@ class ManagementController:
             self.view_cli.display_error_message(f"An unexpected error occurred: {e}")
 
 
-    def modify_support_contact(self) -> None:
-        self.view_cli.clear_screen()
-
-        events = self.get_events_with_optional_filter(support_contact_required=None)
-        if not events:
-            return
-
-        selected_event = self.select_object_from(events, object_type="Event")
-        if not selected_event:
-            return
-
-        support_collaborators = self.get_support_collaborators()
-        if not support_collaborators:
-            return
-
-        selected_support_collaborator = self.select_collaborator_from(support_collaborators,
-                                                                    "Select the new support contact "
-                                                                    "for the event")
-
-        event_with_new_support_collaborator = self.add_support_contact_to_event(selected_event,
-                                                                                selected_support_collaborator)
-
-        self.view_cli.display_event_details(event_with_new_support_collaborator)
-
-
-        self.view_cli.display_info_message(f"The support contact {selected_support_collaborator.get_full_name()}"
-                                        f" has been correctly assigned to the event.")
-
-
     def get_events_with_optional_filter(self, support_contact_required: Optional[bool] = None) -> List[Evenement]:
         try:
             events = self.services_crm.get_all_events_with_optional_filter(support_contact_required)
@@ -438,31 +425,11 @@ class ManagementController:
         return support_collaborators
 
 
-    def select_collaborator_from(self, list_of_collaborators: List[Collaborator],
-                                message: Optional[str] = None) -> Optional[Collaborator]:
-        self.view_cli.clear_screen()
-
-        self.view_cli.display_objects_for_selection(list_of_collaborators, object_type="Collaborator")
-
-        if message:
-            self.view_cli.display_info_message(message)
-
-        collaborators_ids = [collaborator.id for collaborator in list_of_collaborators]
-
-        selected_collaborator_id = self.view_cli.prompt_for_selection_by_id(collaborators_ids, "Collaborator")
-
-        selected_collaborator = next((collaborator for collaborator in list_of_collaborators
-                                    if collaborator.id == selected_collaborator_id), None)
-
-        if not selected_collaborator:
-            self.view_cli.display_error_message("We couldn't find the collaborator. Please try again later.")
-
-        return selected_collaborator
-
-
     def add_support_contact_to_event(self, event: Evenement, support_contact: Collaborator) -> Evenement:
         try:
+            print("event", event, "support_contact", event.client.id)
             event_with_new_support_contact = self.services_crm.add_support_contact_to_event(event, support_contact)
+            print(event_with_new_support_contact, "event with new support contact")
             return event_with_new_support_contact
         except DatabaseError:
             self.view_cli.display_error_message("I encountered a problem with the database. Please try again later.")

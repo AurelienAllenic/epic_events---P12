@@ -252,6 +252,9 @@ class CRMFunctions:
 
     @staticmethod
     def add_support_contact_to_event(event: Evenement, support_contact: Collaborator) -> Evenement:
+        print('support vcontact final ', support_contact)
+        print('event ', event)
+        print(event.support_contact, 'event support contact')
         try:
             event.support_contact = support_contact
             event.full_clean()

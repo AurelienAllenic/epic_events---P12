@@ -132,12 +132,14 @@ class ManagementView(BaseView):
         # Print the table
         console.print(table, justify="center")
 
+
     def display_objects_for_selection(self, objects: List[ModelType], object_type: str) -> None:
         self.clear_screen()
         console = Console()
         if object_type.lower() == "collaborators":
             # Create table for collaborators
-            table = Table(show_header=True, header_style="bold magenta", expand=True)
+            table = Table(title="List of Available collaborators", show_header=True, header_style="bold magenta",
+                        expand=True)
 
             # Determine fields of the object
             fields = objects[0]._meta.fields if objects else []
@@ -190,6 +192,29 @@ class ManagementView(BaseView):
 
             # Print the table for contracts using Rich
             console.print(table)
+        elif object_type.lower() == "events":
+            table = Table(title="List of Available Events", show_header=True, header_style="bold magenta", expand=True)
+            table.add_column("ID", style="dim", width=10)
+            table.add_column("Name", style="dim", width=20)
+            table.add_column("Client Name", style="dim", width=20)
+            table.add_column("Support Contact", style="dim", width=20)
+
+            # Fill the table with events data
+            for object in objects:
+                event_name = object.name if object.name else "No Name"
+                client_name = object.client_name
+                support_contact = object.support_contact.get_full_name() if object.support_contact else "N/A"
+
+                table.add_row(
+                    str(object.id),
+                    event_name,
+                    client_name,
+                    support_contact
+                )
+
+        # Print the table using Rich
+        console.print(table)
+
 
     def get_data_for_modify_collaborator(self, full_name: str) -> dict:
         self.display_info_message(f"Modifying collaborator: {full_name}. "
@@ -223,6 +248,7 @@ class ManagementView(BaseView):
 
         return modification_data
 
+
     def get_data_for_create_contract(self) -> dict:
         self.display_info_message("Please provide the following information for the new contract:")
 
@@ -237,6 +263,7 @@ class ManagementView(BaseView):
         }
 
         return contract_data
+
 
     def get_data_for_modify_contract(self) -> dict:
         modification_data = {}
@@ -256,7 +283,3 @@ class ManagementView(BaseView):
         if status:
             modification_data["status"] = status
         return modification_data
-
-
-    def print_something(self):
-        print("something")

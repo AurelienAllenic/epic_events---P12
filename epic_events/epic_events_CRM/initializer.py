@@ -134,7 +134,7 @@ def create_event(name, client_name, client_contact, day_start, date_end, support
     # Création de l'événement
     event = Evenement.objects.create(
         name=name,
-        client_id=client,
+        client=client,
         client_name=client_name,
         client_contact=client_contact,
         day_start=day_start,
@@ -148,3 +148,5 @@ def create_event(name, client_name, client_contact, day_start, date_end, support
     return event
 
 create_event("first event", "first client", "John Doe", date(2024, 5, 10), date(2024, 5, 11), "emmaStone", "Paris", 50, "Meeting with client")
+create_event("second event", "second client", "John Doe", date(2024, 5, 10), date(2024, 5, 11), "emmaStone", "Paris", 50, "Meeting with client")
+
