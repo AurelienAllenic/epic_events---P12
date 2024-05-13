@@ -14,7 +14,7 @@ from django.contrib.auth import authenticate
 from django.db.models.query import QuerySet
 from django.db import DatabaseError
 from django.db.models import Model
-from crm.models import Collaborator, Contract
+from crm.models import Collaborator, Contract, Evenement
 from django.db.models.fields.related import ForeignKey
 from django.contrib.auth import get_user_model
 
@@ -133,10 +133,11 @@ class ManagementView(BaseView):
         console.print(table, justify="center")
 
 
-    def display_objects_for_selection(self, objects: List[ModelType], object_type: str) -> None:
+    def display_objects_for_selection(self, objects: List[Model]) -> None:
         self.clear_screen()
         console = Console()
-        if object_type.lower() == "collaborators":
+
+        if all(isinstance(obj, Collaborator) for obj in objects):
             # Create table for collaborators
             table = Table(title="List of Available collaborators", show_header=True, header_style="bold magenta",
                         expand=True)
@@ -169,8 +170,8 @@ class ManagementView(BaseView):
 
             # Print the table for collaborators using Rich
             console.print(table)
-        elif object_type.lower() == "contracts":
-            print(objects, 'objects')
+        elif all(isinstance(obj, Contract) for obj in objects):
+            print('nous sommes dans le cas d"un contrat', {obj})
             # Create table for contracts
             table = Table(title="List of Available Contracts", show_header=True, header_style="bold magenta",
                         expand=True)
@@ -192,7 +193,8 @@ class ManagementView(BaseView):
 
             # Print the table for contracts using Rich
             console.print(table)
-        elif object_type.lower() == "events":
+        elif all(isinstance(obj, Evenement) for obj in objects):
+            # Create table for events
             table = Table(title="List of Available Events", show_header=True, header_style="bold magenta", expand=True)
             table.add_column("ID", style="dim", width=10)
             table.add_column("Name", style="dim", width=20)
@@ -200,19 +202,20 @@ class ManagementView(BaseView):
             table.add_column("Support Contact", style="dim", width=20)
 
             # Fill the table with events data
-            for object in objects:
-                event_name = object.name if object.name else "No Name"
-                client_name = object.client_name
-                support_contact = object.support_contact.get_full_name() if object.support_contact else "N/A"
+            for event in objects:
+                event_name = event.name if event.name else "No Name"
+                client_name = event.client_name
+                support_contact = event.support_contact.get_full_name() if event.support_contact else "N/A"
 
                 table.add_row(
-                    str(object.id),
+                    str(event.id),
                     event_name,
                     client_name,
                     support_contact
                 )
 
         # Print the table using Rich
+        console.log('nous y sommes')
         console.print(table)
 
 

@@ -105,7 +105,6 @@ class ManagementController:
         if choice != None:
             match choice:
                 case 1:
-                    print("choice 1")
                     self.instance_creation(object_type)
                 case 2:
                     self.instance_modification(object_type)
@@ -264,7 +263,7 @@ class ManagementController:
     def select_object_from(self, list_of_objects: List[Any], object_type: str, message: Optional[str] = None) -> Optional[Any]:
         print('on rentre dans la fonction select object from')
         self.view_cli.clear_screen()
-        self.view_cli.display_objects_for_selection(list_of_objects, object_type)
+        self.view_cli.display_objects_for_selection(list_of_objects)
 
         if message:
             self.view_cli.display_info_message(message)
