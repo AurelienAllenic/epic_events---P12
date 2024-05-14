@@ -63,7 +63,7 @@ class ManagementController:
             case 5:
                 self.show_all_management_objects("Clients")
             case 6:
-                self.show_all_management_objects("Contracts2")
+                self.show_all_management_objects("Contracts")
             case 7:
                 self.show_all_management_objects("Events")
             case 8:
@@ -155,7 +155,9 @@ class ManagementController:
 
 
     def instance_creation(self, object_type: str) -> None:
+        print('nous sommes dans instance Creation')
         if object_type.lower() == "collaborators":
+            print('nous sommes dans instance Creation pour les collaborators')
             while True:
                 self.view_cli.clear_screen()
                 self.view_cli.display_info_message("Registering new collaborator...")
@@ -173,15 +175,18 @@ class ManagementController:
                     self.view_cli.display_error_message(str(e))
                     break
         elif object_type.lower() == "contracts":
+            print('nous sommes dans instance Creation pour les contracts')
             self.view_cli.clear_screen()
             print(f"Creating contract for client... of type {object_type}...")
-            clients = CRMFunctions.get_all_objects(object_type)
+            clients = CRMFunctions.get_all_objects('clients')
+            contracts = CRMFunctions.get_all_objects('contracts')
             print(f'the clients are {clients}')
+            print(f'the contracts are {contracts}')
             if not clients:
                 print("No clients for the moment")
                 return
-
-            selected_client = self.select_client_from(clients)
+            selected_contract = self.select_object_from(clients, "contracts")
+            selected_client = self.select_object_from(clients, "contracts")
 
             if not selected_client:
                 return print("No client selected.")
@@ -190,28 +195,6 @@ class ManagementController:
         else:
             print("Invalid object type specified.")
             return
-
-
-    def select_client_from(self, clients: List[Client]) -> Optional[Client]:
-
-        self.view_cli.clear_screen()
-        self.view_cli.display_objects_for_selection(clients)
-        self.view_cli.display_info_message("Please select the client to whom you want to assign "
-                                           "the contract you are about create.")
-        # Extract client IDs for selection
-        clients_ids = [client.id for client in clients]
-
-        # Prompt user to select a client by ID
-        selected_client_id = self.view_cli.prompt_for_selection_by_id(clients_ids, "Client")
-
-        # Find the selected client by ID
-        selected_client = next((client for client in clients if client.id == selected_client_id), None)
-
-        # If no client is found, display error message
-        if not selected_client:
-            self.view_cli.display_error_message("We couldn't find the client. Please try again later.")
-
-        return selected_client
 
 
     def create_contract_for(self, client: Client) -> None:
@@ -245,7 +228,7 @@ class ManagementController:
     def instance_modification(self, object_type: str) -> None:
         self.view_cli.clear_screen()
         if object_type.lower() == "contracts":
-            our_objects = CRMFunctions.get_all_objects("contracts2")
+            our_objects = CRMFunctions.get_all_objects("contracts")
         else:
             our_objects = CRMFunctions.get_all_objects(object_type)
 
@@ -263,6 +246,7 @@ class ManagementController:
     def select_object_from(self, list_of_objects: List[Any], object_type: str, message: Optional[str] = None) -> Optional[Any]:
         print('on rentre dans la fonction select object from')
         self.view_cli.clear_screen()
+        print('list of objects', list_of_objects)
         self.view_cli.display_objects_for_selection(list_of_objects)
 
         if message:

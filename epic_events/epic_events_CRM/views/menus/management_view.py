@@ -14,7 +14,7 @@ from django.contrib.auth import authenticate
 from django.db.models.query import QuerySet
 from django.db import DatabaseError
 from django.db.models import Model
-from crm.models import Collaborator, Contract, Evenement
+from crm.models import Collaborator, Contract, Evenement, Client
 from django.db.models.fields.related import ForeignKey
 from django.contrib.auth import get_user_model
 
@@ -136,8 +136,9 @@ class ManagementView(BaseView):
     def display_objects_for_selection(self, objects: List[Model]) -> None:
         self.clear_screen()
         console = Console()
+        print('objects', objects)
 
-        if all(isinstance(obj, Collaborator) for obj in objects):
+        if any(isinstance(item, Collaborator) for item in objects):
             # Create table for collaborators
             table = Table(title="List of Available collaborators", show_header=True, header_style="bold magenta",
                         expand=True)
@@ -170,8 +171,8 @@ class ManagementView(BaseView):
 
             # Print the table for collaborators using Rich
             console.print(table)
-        elif all(isinstance(obj, Contract) for obj in objects):
-            print('nous sommes dans le cas d"un contrat', {obj})
+        
+        elif any(isinstance(item, Contract) for item in objects):
             # Create table for contracts
             table = Table(title="List of Available Contracts", show_header=True, header_style="bold magenta",
                         expand=True)
@@ -193,7 +194,28 @@ class ManagementView(BaseView):
 
             # Print the table for contracts using Rich
             console.print(table)
-        elif all(isinstance(obj, Evenement) for obj in objects):
+        elif any(isinstance(item, Client) for item in objects):
+            self.clear_screen()
+            # Create console instance
+            console = Console()
+
+            # Create table
+            table = Table(title="List of Available Clients", show_header=True, header_style="bold magenta", expand=True)
+            table.add_column("ID", style="dim", width=10)
+            table.add_column("Full Name", style="dim", width=20)
+
+            # Fill the table with clients data
+            for client in objects:
+                client_name = client.name if client.name else "No Name"
+
+                table.add_row(
+                    str(client.id),
+                    client_name
+                )
+
+            # Print the table using Rich
+            console.print(table)
+        elif any(isinstance(item, Evenement) for item in objects):
             # Create table for events
             table = Table(title="List of Available Events", show_header=True, header_style="bold magenta", expand=True)
             table.add_column("ID", style="dim", width=10)
@@ -214,9 +236,10 @@ class ManagementView(BaseView):
                     support_contact
                 )
 
-        # Print the table using Rich
-        console.log('nous y sommes')
-        console.print(table)
+            # Print the table for events using Rich
+            console.print(table)
+        else:
+            console.print("Unsupported object type", objects)
 
 
     def get_data_for_modify_collaborator(self, full_name: str) -> dict:
