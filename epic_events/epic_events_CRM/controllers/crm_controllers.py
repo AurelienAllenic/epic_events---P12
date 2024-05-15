@@ -4,7 +4,9 @@ from crm.models import Collaborator
 from services.crm_functions import CRMFunctions
 from views.crm_views import CRMView
 from controllers.menus.management_controller import ManagementController
+from controllers.menus.sales_controller import SalesController
 from views.menus.management_view import ManagementView
+from views.menus.sales_view import SalesView
 
 
 class CRMController:
@@ -40,7 +42,11 @@ class CRMController:
             case "support":
                 print("Support role")
             case "sales":
-                print("Sales role")
+                view_cli = SalesView()
+                view_cli_management = ManagementView()
+                management_role_controller = ManagementController(collaborator, self.crm_services, view_cli_management)
+                sales_role_controller = SalesController(collaborator, self.crm_services, view_cli, view_cli_management, management_role_controller)
+                sales_role_controller.start()
             case "management":
                 view_cli = ManagementView()
                 management_role_controller = ManagementController(collaborator, self.crm_services, view_cli)

@@ -7,7 +7,7 @@ from django.db import DatabaseError
 from django.db.models.query import QuerySet
 
 class ManagementController:
-    MAIN_MENU_OPTIONS = [
+    MAIN_MENU_OPTIONS_MANAGEMENT = [
         "1 - Manipulate collaborators data in the CRM system.",
         "2 - Manipulate contracts.",
         "3 - Filter events based on whether they have or don't have a support contact.",
@@ -18,20 +18,20 @@ class ManagementController:
         "8 - Exit the CRM."
     ]
 
-    SUB_MENU_MANAGE_COLLABORATORS = [
+    SUB_MENU_MANAGE_COLLABORATORS_MANAGEMENT = [
         "1 - Create a collaborator.",
         "2 - Update a collaborator.",
         "3 - Delete a collaborator.",
         "4 - Return to main menu"
     ]
 
-    SUB_MENU_MANAGE_CONTRACTS = [
+    SUB_MENU_MANAGE_CONTRACTS_MANAGEMENT = [
         "1 - Create new contract.",
         "2 - Update a contract.",
         "3 - Return to main menu"
     ]
 
-    SUB_MENU_EVENTS = [
+    SUB_MENU_EVENTS_MANAGEMENT = [
         "1 - View events with support contact assigned.",
         "2 - View events without support contact assigned.",
         "3 - Return to main menu"
@@ -48,8 +48,8 @@ class ManagementController:
 
     def start(self) -> None:
         name_to_display = self.collaborator.get_full_name() or collaborator.username
-        self.view_cli.show_menu(name_to_display, self.MAIN_MENU_OPTIONS)
-        choice = self.view_cli.get_collaborator_choice(limit=len(self.MAIN_MENU_OPTIONS))
+        self.view_cli.show_menu(name_to_display, self.MAIN_MENU_OPTIONS_MANAGEMENT)
+        choice = self.view_cli.get_collaborator_choice(limit=len(self.MAIN_MENU_OPTIONS_MANAGEMENT))
 
         match choice:
             case 1:
@@ -91,14 +91,14 @@ class ManagementController:
         self.view_cli.clear_screen()
         choice = None
         if object_type.lower() == "collaborators" or object_type.lower() == "clients":
-            self.view_cli.show_menu(self.collaborator.get_full_name(), self.SUB_MENU_MANAGE_COLLABORATORS)
-            choice = self.view_cli.get_collaborator_choice(limit=len(self.SUB_MENU_MANAGE_COLLABORATORS))
+            self.view_cli.show_menu(self.collaborator.get_full_name(), self.SUB_MENU_MANAGE_COLLABORATORS_MANAGEMENT)
+            choice = self.view_cli.get_collaborator_choice(limit=len(self.SUB_MENU_MANAGE_COLLABORATORS_MANAGEMENT))
         elif object_type.lower() == "contracts":
-            self.view_cli.show_menu(self.collaborator.get_full_name(), self.SUB_MENU_MANAGE_CONTRACTS)
-            choice = self.view_cli.get_collaborator_choice(limit=len(self.SUB_MENU_MANAGE_CONTRACTS))
+            self.view_cli.show_menu(self.collaborator.get_full_name(), self.SUB_MENU_MANAGE_CONTRACTS_MANAGEMENT)
+            choice = self.view_cli.get_collaborator_choice(limit=len(self.SUB_MENU_MANAGE_CONTRACTS_MANAGEMENT))
         elif object_type.lower() == "events":
-            self.view_cli.show_menu(self.collaborator.get_full_name(), self.SUB_MENU_EVENTS)
-            choiceEvent = self.view_cli.get_collaborator_choice(limit=len(self.SUB_MENU_EVENTS))
+            self.view_cli.show_menu(self.collaborator.get_full_name(), self.SUB_MENU_EVENTS_MANAGEMENT)
+            choiceEvent = self.view_cli.get_collaborator_choice(limit=len(self.SUB_MENU_EVENTS_MANAGEMENT))
         else:
             print(f"Invalid object type specified : {object_type}.")
             return
