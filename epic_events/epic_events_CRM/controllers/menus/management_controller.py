@@ -162,7 +162,7 @@ class ManagementController:
                 self.view_cli.clear_screen()
                 self.view_cli.display_info_message("Registering new collaborator...")
 
-                data_collaborator = self.view_cli.get_data_for_create_collaborator()
+                data_collaborator = self.view_cli.get_data_for_create_object("collaborators")
                 print(data_collaborator)
                 try:
                     collaborator = self.services_crm.register_collaborator(**data_collaborator)
@@ -192,6 +192,20 @@ class ManagementController:
                 return print("No client selected.")
 
             self.create_contract_for(selected_client)
+        elif object_type.lower() == "clients":
+            self.view_cli.clear_screen()
+            self.view_cli.display_info_message("Creating a new client...")
+
+            client_data = self.view_cli.get_data_for_create_object('clients')
+            print(client_data)
+            client_data['commercial_contact'] = self.collaborator
+            try:
+                print("client data :", client_data)
+                client = self.services_crm.create_client(**client_data)
+                self.view_cli.clear_screen()
+                self.view_cli.display_info_message("Client created successfully!")
+            except Exception as e:
+                self.view_cli.display_error_message(str(e))
         else:
             print("Invalid object type specified.")
             return
@@ -204,7 +218,7 @@ class ManagementController:
         self.view_cli.display_info_message(f"You are creating a new contract for: {client.name}")
 
         # Get contract data from the user
-        data_contract = self.view_cli.get_data_for_create_contract()
+        data_contract = self.view_cli.get_data_for_create_object('contracts')
         data_contract["client_infos"] = client
         data_contract["commercial_contact"] = client.commercial_contact
 

@@ -266,3 +266,33 @@ class CRMFunctions:
             raise DatabaseError("Problem with the database access during the support contact assignment") from e
         except Exception as e:
             raise Exception("Unexpected error occurred during the support contact assignment") from e
+        
+    @staticmethod
+    def create_client(name: str,
+                        email: str,
+                        phone: str,
+                        company_name: str,
+                        commercial_contact: Collaborator) -> Client:
+
+        if Client.objects.filter(email=email).exists():
+            raise ValidationError(f"The {email} is already in use.")
+
+        try:
+            new_client = Client(
+                name=name,
+                email=email,
+                phone=phone,
+                company_name=company_name,
+                commercial_contact=commercial_contact
+            )
+
+            new_client.full_clean()
+            new_client.save()
+
+            return new_client
+        except ValidationError as e:
+            raise ValidationError(f"Validation error: {e}") from e
+        except DatabaseError as e:
+            raise DatabaseError("Problem with database access") from e
+        except Exception as e:
+            raise Exception("Unexpected error creating client") from e

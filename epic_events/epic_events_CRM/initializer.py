@@ -66,10 +66,10 @@ def create_collaborator(first_name, last_name, username, email, role_name, emplo
 
 
 create_collaborator("Aurelien", "Allenic", "aurelien", "aurelien.allenic@gmail.com",
-                    "management", "9473", "managementPassword9473",
+                    "management", "9473", "manageMdp1",
                     "management_team")
-create_collaborator("Boris", "Johnson", "borisSales", "alex.sales@example.net",
-                    "sales", "9474", "SalesPassword9474", "sales_team")
+create_collaborator("Boris", "Johnson", "sales", "alex.sales@example.net",
+                    "sales", "9474", "salesMdp1", "sales_team")
 create_collaborator("Emma", "Stone", "emmaStone", "emma.stone@example.net",
                     "support", "9475", "SupportPassword9475",
                     "support_team")

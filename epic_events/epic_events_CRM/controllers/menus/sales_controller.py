@@ -60,7 +60,7 @@ class SalesController:
                 user_sub_menu_choice = self.view_cli.get_user_menu_choice()
                 match user_sub_menu_choice:
                     case 1:
-                        print("Create client")
+                        self.management_controller.instance_creation("clients")
                     case 2:
                         print("Update client infos")
                     case 3:

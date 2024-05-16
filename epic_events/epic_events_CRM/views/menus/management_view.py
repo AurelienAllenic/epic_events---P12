@@ -28,27 +28,61 @@ class ManagementView(BaseView):
     def __init__(self):
         super().__init__()
 
+    def get_data_for_create_object(self, object_type: str) -> dict:
+        if object_type.lower() == "collaborators":
+            first_name = self.get_valid_input_with_limit("First Name", 50)
+            last_name = self.get_valid_input_with_limit("Last Name", 50)
+            username = self.get_valid_input_with_limit("Username", 50)
+            password = self.get_valid_password()
+            email = self.get_valid_email()
+            role = self.get_valid_role_for_collaborator()
+            employee_number = self.get_valid_input_with_limit("Employee Number", 50)
 
-    def get_data_for_create_collaborator(self) -> dict:
-        first_name = self.get_valid_input_with_limit("First Name", 50)
-        last_name = self.get_valid_input_with_limit("Last Name", 50)
-        username = self.get_valid_input_with_limit("Username", 50)
-        password = self.get_valid_password()
-        email = self.get_valid_email()
-        role = self.get_valid_role_for_collaborator()
-        employee_number = self.get_valid_input_with_limit("Employee Number", 50)
+            collaborator_data = {
+                "first_name": first_name,
+                "last_name": last_name,
+                "username": username,
+                "password": password,
+                "email": email,
+                "role_name": role,
+                "employee_number": employee_number
+            }
 
-        collaborator_data = {
-            "first_name": first_name,
-            "last_name": last_name,
-            "username": username,
-            "password": password,
-            "email": email,
-            "role_name": role,
-            "employee_number": employee_number
-        }
+            return collaborator_data
+        
+        elif object_type.lower() == "contracts":
+            self.display_info_message("Please provide the following information for the new contract:")
 
-        return collaborator_data
+            value = self.get_valid_decimal_input("Total Amount (e.g., 9999.99)")
+            due = self.get_valid_decimal_input("Amount Remaining (e.g., 9999.99)")
+            status = self.get_valid_choice("Status (Options: signed, not_signed)", ["signed", "not_signed"])
+
+            contract_data = {
+                "value": value,
+                "due": due,
+                "status": status
+            }
+
+            return contract_data
+        elif object_type.lower() == "clients":
+            self.display_info_message("Please provide the following information for the new client")
+
+            name = self.get_valid_input_with_limit("Full Name (max 100 characters)", 100)
+            email = self.get_valid_email()
+            phone = self.get_valid_input_with_limit("Phone number (max 20 characters)", 20)
+            company_name = self.get_valid_input_with_limit("Company name (max 100 characters)", 100)
+
+            client_data = {
+                "name": name,
+                "email": email,
+                "phone": phone,
+                "company_name": company_name
+            }
+
+            return client_data
+        else:
+            raise ValueError("Invalid object type. Expected 'collaborator', 'contract' or 'client'.")
+
 
 
     def get_valid_role_for_collaborator(self, allow_blank: bool = False) -> str:
@@ -275,20 +309,7 @@ class ManagementView(BaseView):
         return modification_data
 
 
-    def get_data_for_create_contract(self) -> dict:
-        self.display_info_message("Please provide the following information for the new contract:")
 
-        value = self.get_valid_decimal_input("Total Amount (e.g., 9999.99)")
-        due = self.get_valid_decimal_input("Amount Remaining (e.g., 9999.99)")
-        status = self.get_valid_choice("Status (Options: signed, not_signet)", ["signed", "not_signed"])
-
-        contract_data = {
-            "value": value,
-            "due": due,
-            "status": status
-        }
-
-        return contract_data
 
 
     def get_data_for_modify_contract(self) -> dict:
