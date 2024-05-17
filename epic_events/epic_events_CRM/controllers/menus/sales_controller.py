@@ -64,7 +64,7 @@ class SalesController:
                     case 2:
                         self.management_controller.instance_modification("clients")
                     case 3:
-                        print("Update client contract")
+                        self.management_controller.instance_deletion("clients")
                     case 4:
                         self.view_cli.show_main_menu(name_to_display, self.MAIN_MENU_OPTIONS_SALES)
                     case _:
