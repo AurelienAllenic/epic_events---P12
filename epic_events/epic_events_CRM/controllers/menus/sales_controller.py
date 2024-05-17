@@ -62,7 +62,7 @@ class SalesController:
                     case 1:
                         self.management_controller.instance_creation("clients")
                     case 2:
-                        print("Update client infos")
+                        self.management_controller.instance_modification("clients")
                     case 3:
                         print("Update client contract")
                     case 4:

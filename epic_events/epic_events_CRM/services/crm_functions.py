@@ -296,3 +296,20 @@ class CRMFunctions:
             raise DatabaseError("Problem with database access") from e
         except Exception as e:
             raise Exception("Unexpected error creating client") from e
+
+    @staticmethod
+    def modify_client(client: Client, modifications: dict) -> Client:
+        try:
+            for key, value in modifications.items():
+                setattr(client, key, value)
+
+            client.full_clean()
+            client.save()
+            return client
+
+        except ValidationError as e:
+            raise ValidationError(f"Validation error while modifying the client: {e}") from e
+        except DatabaseError as e:
+            raise DatabaseError("Problem with database access") from e
+        except Exception as e:
+            raise Exception("Unexpected error modifying client.") from e

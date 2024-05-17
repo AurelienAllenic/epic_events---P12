@@ -159,6 +159,19 @@ class ManagementView(BaseView):
             table.add_row("Total Amount", str(item.value))
             table.add_row("Amount Remaining", str(item.due))
             table.add_row("Status", item.status)
+        elif isinstance(item, Client):
+            table = Table(title="Client Detail", show_header=True, header_style="bold blue", show_lines=True)
+            table.add_column("Field", style="dim", width=20)
+            table.add_column("Value", width=40)
+
+            table.add_row("Client ID", str(item.id))
+            table.add_row("Full Name", item.name)
+            table.add_row("Email", item.email)
+            table.add_row("Phone", item.phone)
+            table.add_row("Company Name", item.company_name)
+            table.add_row("Sales Contact", item.commercial_contact.get_full_name() if item.commercial_contact else "N/A")
+
+            console.print(table, justify="center")
         else:
             print("Unsupported item type for display:", type(item))
             return
@@ -310,8 +323,6 @@ class ManagementView(BaseView):
 
 
 
-
-
     def get_data_for_modify_contract(self) -> dict:
         modification_data = {}
         self.display_info_message("Modifying contract... "
@@ -330,3 +341,29 @@ class ManagementView(BaseView):
         if status:
             modification_data["status"] = status
         return modification_data
+
+
+    def get_data_for_client_modification(self) -> dict:
+            modification_data = {}
+            self.display_info_message("Leave blank any field you do not wish to modify")
+
+            new_name = self.get_valid_input_with_limit("New name (max 100 characters) or leave blank",
+                                                            100, allow_blank=True)
+            if new_name:
+                modification_data["name"] = new_name
+
+            new_email = self.get_valid_email(allow_blank=True)
+            if new_email:
+                modification_data["email"] = new_email
+
+            new_phone = self.get_valid_input_with_limit("New phone number (max 20 characters) or leave blank",
+                                                        20, allow_blank=True)
+            if new_phone:
+                modification_data["phone"] = new_phone
+
+            new_company_name = self.get_valid_input_with_limit("New company name (max 100 characters) or leave blank",
+                                                            100, allow_blank=True)
+            if new_company_name:
+                modification_data["company_name"] = new_company_name
+
+            return modification_data

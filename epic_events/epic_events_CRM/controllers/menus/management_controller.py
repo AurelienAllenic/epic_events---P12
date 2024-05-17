@@ -280,7 +280,28 @@ class ManagementController:
 
     def modify_object(self, selected_item: Any) -> None:
         if isinstance(selected_item, Client):
-            print("Client modification not implemented yet.")
+            self.view_cli.clear_screen()
+            self.view_cli.display_item_details(selected_item)
+            modifications = self.view_cli.get_data_for_client_modification()
+
+            # Checks if no modifications were provided.
+            if not modifications:
+                # Informs the user that no modifications were made and exits.
+                self.view_cli.display_info_message("No modifications were made.")
+                return
+
+            try:
+                # Attempts to modify the client using the provided data
+                client_modified = self.services_crm.modify_client(selected_item, modifications)
+                self.view_cli.clear_screen()
+                self.view_cli.display_item_details(client_modified)
+                self.view_cli.display_info_message("The client has been modified successfully.")
+            except ValidationError as e:
+                self.view_cli.display_error_message(str(e))
+            except DatabaseError:
+                self.view_cli.display_error_message("I encountered a problem with the database. Please try again.")
+            except Exception as e:
+                self.view_cli.display_error_message(str(e))
         elif isinstance(selected_item, Contract):
             
             self.view_cli.clear_screen()
