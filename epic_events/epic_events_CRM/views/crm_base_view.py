@@ -435,3 +435,30 @@ class BaseView:
             table.add_row(*row)
 
         console.print(table)
+
+
+    def get_contract_filter_choices(self) -> int:
+        self.clear_screen()
+        console = Console()
+
+        filter_options = [
+            "1 - View all contracts of your clients.",
+            "2 - View all unpaid contracts of your clients.",
+            "3 - View all unsigned contracts of your clients."
+        ]
+
+        table = Table(show_header=True,
+                    header_style="bold magenta")
+
+        table.add_column("Filter Options",
+                        justify="left",
+                        style="dim")
+
+        for option in filter_options:
+            table.add_row(option)
+
+        console.print(table, justify="center")
+
+        choice = self.get_collaborator_choice(limit=len(filter_options))
+
+        return choice

@@ -10,6 +10,7 @@ from django.db.models import Model
 from typing import List, Optional, Any
 from django.contrib.auth.models import Group
 from django.db.models import QuerySet
+from datetime import datetime
 
 
 class CRMFunctions:
@@ -313,3 +314,104 @@ class CRMFunctions:
             raise DatabaseError("Problem with database access") from e
         except Exception as e:
             raise Exception("Unexpected error modifying client.") from e
+
+
+    def get_filtered_contracts_for_collaborator(self, collaborator_id: int, filter_type: str = None) -> QuerySet[Contract]:
+        try:
+            print('try de get filtered contracts', collaborator_id, filter_type)
+            
+            # Récupérer les clients associés au collaborateur
+            clients = self.get_clients_for_collaborator(collaborator_id)
+            print('clients', clients)
+            
+            # Filtrer les contrats en utilisant la clé étrangère 'client_infos'
+            contracts = Contract.objects.filter(client_infos__in=clients)
+            print('contracts', contracts)
+
+            # Afficher le type de filtre et les statuts distincts dans la base de données
+            print('filter_type:', filter_type)
+            distinct_statuses = Contract.objects.values_list('status', flat=True).distinct()
+            print('Distinct statuses in the database:', distinct_statuses)
+            
+            # Afficher tous les contrats avec leur statut avant d'appliquer le filtre
+            for contract in contracts:
+                print(f'Contract ID: {contract.id}, Status: {contract.status}')
+            
+            # Appliquer les filtres supplémentaires en fonction du type de filtre
+            match filter_type:
+                case "signed":
+                    print('heres the contracts SIGNED 1', contracts)
+                    contracts = contracts.filter(status="signed")
+                    print('heres the contracts SIGNED', contracts)
+                case "not_signed":
+                    contracts = contracts.filter(status="not_signed")
+                    print('heres the contracts NOT SIGNED', contracts)
+                case "open":
+                    contracts = contracts.filter(status="open")
+                    print('heres the contracts OPEN', contracts)
+                case None:
+                    print('no additional filter applied')
+                    pass  # Pas de filtrage supplémentaire si filter_type est None
+                case _:
+                    raise ValueError(f"Unsupported filter type: {filter_type}")
+            
+            # Afficher tous les contrats avec leur statut après avoir appliqué le filtre
+            for contract in contracts:
+                print(f'Filtered Contract ID: {contract.id}, Status: {contract.status}')
+            
+            # Vérifier si des contrats existent après les filtres
+            if not contracts.exists():
+                print('There are no contracts to display')
+            else:
+                print('Filtered contracts:', contracts)
+
+            return contracts
+        except DatabaseError as e:
+            raise DatabaseError("Problem with database access") from e
+        except Exception as e:
+            raise Exception("Unexpected error retrieving contracts.") from e
+
+
+    @staticmethod
+    def get_clients_for_collaborator(collaborator_id: int) -> QuerySet[Evenement]:
+        try:
+            clients_of_collaborator = Client.objects.filter(commercial_contact_id=collaborator_id)
+            return clients_of_collaborator
+        except DatabaseError as e:
+            raise DatabaseError("Problem with database access") from e
+        except Exception as e:
+            raise Exception("Unexpected error retrieving clients") from e
+
+
+    @staticmethod
+    def create_event(contract: Contract,
+                    client_name: str,
+                    name: str,
+                    client_contact: str,
+                    start_date: datetime,
+                    date_end: datetime,
+                    location: str,
+                    attendees: int,
+                    notes: str) -> Evenement:
+
+        try:
+            event = Evenement(
+                contract=contract,
+                client_name=client_name,
+                name=name,
+                client_contact=client_contact,
+                start_date=start_date,
+                date_end=date_end,
+                location=location,
+                attendees=attendees,
+                notes=notes
+            )
+            # Saves the new event to the database
+            event.save()
+            return event
+        except ValidationError as e:
+            raise ValidationError(f"ValidationError: {e}") from e
+        except DatabaseError as e:
+            raise DatabaseError("Problem with the database") from e
+        except Exception as e:
+            raise Exception("An unexpected error occurred while creating the event") from e
