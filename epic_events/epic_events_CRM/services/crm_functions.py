@@ -64,6 +64,7 @@ class CRMFunctions:
             elif object_type.lower() == "contracts":
                 return Contract.objects.all()
             elif object_type.lower() == "events":
+                print('events ICI')
                 return Evenement.objects.all()
             else:
                 print("Invalid object type specified.")
@@ -428,3 +429,15 @@ class CRMFunctions:
             raise DatabaseError(f"DatabaseError: {e}") from e
         except Exception as e:
             raise Exception(f"An unexpected error occurred while creating the event: {e}") from e
+
+
+    @staticmethod
+    def get_events_for_collaborator(collaborator_id: int) -> QuerySet[Evenement]:
+        print("Collaborator ID:", collaborator_id)
+        try:
+            print("Dans le try")
+            return Evenement.objects.filter(support_contact_id=collaborator_id)
+        except DatabaseError as e:
+            raise DatabaseError("Problem with the database access") from e
+        except Exception as e:
+            print(f"Error retrieving events for collaborator {collaborator_id}: {e}")

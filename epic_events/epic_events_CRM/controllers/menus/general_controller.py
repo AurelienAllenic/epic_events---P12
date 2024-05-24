@@ -82,7 +82,7 @@ class GeneralController:
             self.general_view.display_info_message(message)
 
         objects_ids = [obj.id for obj in list_of_objects]
-        print('object type dans select object from', object_type)
+        print('object type dans select object from', object_type, objects_ids)
         selected_object_id = self.general_view.prompt_for_selection_by_id(objects_ids, object_type)
 
         selected_object = next((obj for obj in list_of_objects if obj.id == selected_object_id), None)
@@ -127,11 +127,14 @@ class GeneralController:
         if object_type.lower() == "contracts":
             our_objects = CRMFunctions.get_all_objects("contracts")
         else:
+            print(f"Getting all {object_type}...")
             our_objects = CRMFunctions.get_all_objects(object_type)
-
+            print('apres')
+            print(our_objects, 'la liste des objets')
+            
         if not our_objects:
             return
-
+        print(our_objects, 'la liste des objets')
         selected_object = self.select_object_from(our_objects, object_type)
 
         if not selected_object:
@@ -141,6 +144,7 @@ class GeneralController:
 
 
     def modify_object(self, selected_item: Any) -> None:
+        print('on rentre dans la fonction modify object')
         if isinstance(selected_item, Client):
             self.general_view.clear_screen()
             self.general_view.display_item_details(selected_item)
@@ -205,8 +209,45 @@ class GeneralController:
                 except Exception as e:
                     self.general_view.display_error_message(str(e))
                     break
+        elif isinstance(selected_item, Evenement):
+            self.general_view.clear_screen()
+            self.general_view.display_item_details(selected_item)
+            event_data = self.general_view.get_data_for_modify_event()
+
+            if not event_data:
+                self.general_view.display_info_message("No modifications were made.")
+                return
+
+            try:
+                event_modified = self.general_view.modify_event(selected_item, event_data)
+                self.general_view.clear_screen()
+                self.general_view.display_item_details(event_modified)
+                self.general_view.display_info_message("The event has been modified successfully.")
+            except ValidationError as e:
+                self.general_view.display_error_message(str(e))
+            except DatabaseError:
+                self.general_view.display_error_message("I encountered a problem with the database. Please try again later.")
+            except Exception as e:
+                self.general_view.display_error_message(str(e))
         else:
             print("Unsupported item type for modification:", type(selected_item))
+
+
+    def get_events_for_collaborator(self, collaborator_id: int) -> List[Evenement]:
+
+        try:
+            events = self.services_crm.get_events_for_collaborator(collaborator_id)
+        except DatabaseError:
+            self.general_view.display_error_message("I encountered a problem with the database. Please again later.")
+            return []
+        except Exception as e:
+            self.general_view.display_error_message(str(e))
+            return []
+
+        if not events:
+            self.general_view.display_info_message("There is no events available to display.")
+
+        return events
 
 
     def show_all_objects(self, object_type: str) -> None:
@@ -236,7 +277,7 @@ class GeneralController:
         objects_ids = [obj.id for obj in list_of_objects]
         print('object type dans select object from', object_type)
         selected_object_id = self.general_view.prompt_for_selection_by_id(objects_ids, object_type)
-
+        print('la selection est', selected_object_id)
         selected_object = next((obj for obj in list_of_objects if obj.id == selected_object_id), None)
 
         if not selected_object:

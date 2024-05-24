@@ -70,8 +70,8 @@ create_collaborator("Aurelien", "Allenic", "aurelien", "aurelien.allenic@gmail.c
                     "management_team")
 create_collaborator("Boris", "Johnson", "sales", "alex.sales@example.net",
                     "sales", "9474", "salesMdp1", "sales_team")
-create_collaborator("Emma", "Stone", "emmaStone", "emma.stone@example.net",
-                    "support", "9475", "SupportPassword9475",
+create_collaborator("Emma", "Stone", "support", "emma.stone@example.net",
+                    "support", "9475", "supportMdp1",
                     "support_team")
 
 
@@ -168,5 +168,5 @@ def create_event(name, client_name, client_contact, day_start, date_end, support
     return event
 
 
-create_event("first event", "first client", "John Doe", date(2024, 5, 10), date(2024, 5, 11), "emmaStone", "Paris", 50, "Meeting with client", contracts["first client"])
-create_event("second event", "second client", "John Doe", date(2024, 5, 10), date(2024, 5, 11), "emmaStone", "Paris", 50, "Meeting with client", contracts["second client"])
+create_event("first event", "first client", "John Doe", date(2024, 5, 10), date(2024, 5, 11), "support", "Paris", 50, "Meeting with client", contracts["first client"])
+create_event("second event", "second client", "John Doe", date(2024, 5, 10), date(2024, 5, 11), "support", "Paris", 50, "Meeting with client", contracts["second client"])

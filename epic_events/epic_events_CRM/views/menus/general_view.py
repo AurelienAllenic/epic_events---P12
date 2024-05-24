@@ -6,6 +6,13 @@ from typing import List, Any
 from rich.console import Console
 from rich.table import Table
 from crm.models import Contract, Client, Evenement, Collaborator 
+from datetime import datetime, timezone, timedelta
+from django.utils.timezone import make_aware
+from django.utils.timezone import get_default_timezone
+from dateutil.parser import parse
+from typing import Optional
+from django.core.exceptions import ValidationError
+from django.db import DatabaseError
 
 
 class GeneralView(BaseView):
@@ -246,3 +253,121 @@ class GeneralView(BaseView):
         return modification_data
 
 
+    def get_data_for_modify_event(self) -> dict:
+        modification_data = {}
+
+        self.display_info_message("Leave blank any field you do not wish to modify.")
+
+        new_name = self.get_valid_input_with_limit("New Name (or leave blank)", 100, allow_blank=True)
+        if new_name:
+            modification_data["name"] = new_name
+
+        new_client_name = self.get_valid_input_with_limit("New Client Name (or leave blank)", 100, allow_blank=True)
+        if new_client_name:
+            modification_data["client_name"] = new_client_name
+
+        new_client_contact = self.get_valid_input_with_limit("New contact information (or leave blank)", 250,
+                                                            allow_blank=True)
+        if new_client_contact:
+            modification_data["client_contact"] = new_client_contact
+
+        new_location = self.get_valid_input_with_limit("New Location (or leave blank)", 250, allow_blank=True)
+        if new_location:
+            modification_data["location"] = new_location
+
+        new_notes = self.get_valid_input_with_limit("New Notes (or leave blank)", 500, allow_blank=True)
+        if new_notes:
+            modification_data["notes"] = new_notes
+
+        new_attendees = self.get_valid_integer_input("New Attendees (or leave blank)", allow_blank=True)
+        if new_attendees:
+            modification_data["attendees"] = new_attendees
+
+        new_start_date = self.get_valid_start_date(allow_blank=True)
+        if new_start_date:
+            modification_data["day_start"] = new_start_date
+            new_end_date = self.get_valid_end_date(new_start_date, allow_blank=True)
+            if new_end_date:
+                modification_data["date_end"] = new_end_date
+
+        return modification_data
+
+
+    def get_valid_integer_input(self, prompt_text: str, allow_blank: bool = False) -> Optional[int]:
+        while True:
+            user_input = click.prompt(prompt_text, default="", show_default=False).strip()
+
+            if allow_blank and user_input == "":
+                return None
+
+            if not user_input and not allow_blank:
+                self.display_error_message("This field cannot be empty.")
+                continue
+
+            try:
+                value = int(user_input)
+                return value
+            except ValueError:
+                self.display_error_message("Please enter a valid integer number (e.g. 12345)")
+                continue
+
+
+    def get_valid_start_date(self, allow_blank: bool = False) -> Optional[datetime]:
+
+        while True:
+            start_date_str = click.prompt("New start date (YYYY-MM-DD HH:MM)", default="", show_default=False)
+
+            if allow_blank and start_date_str.strip() == "":
+                return None
+
+            try:
+                naive_start_date = parse(start_date_str)
+            except ValueError:
+                self.display_error_message("Invalid date format. Please use YYYY-MM-DD HH:MM.")
+                continue
+
+            if naive_start_date < datetime.now():
+                self.display_error_message("Start date must be in the future. Please try again.")
+                continue
+
+            return make_aware(naive_start_date, get_default_timezone())
+
+
+    def get_valid_end_date(self, start_date: datetime, allow_blank: bool = False) -> Optional[datetime]:
+
+        while True:
+            end_date_str = click.prompt("New end date (YYYY-MM-DD HH:MM)", default="", show_default=False)
+
+            if allow_blank and end_date_str.strip() == "":
+                return None
+
+            try:
+                naive_end_date = parse(end_date_str)
+                aware_end_date = make_aware(naive_end_date, get_default_timezone())
+            except ValueError:
+                self.display_error_message("Invalid date format. Please use YYYY-MM-DD HH:MM.")
+                continue
+
+            if aware_end_date <= start_date:
+                self.display_error_message("End date must be after the start date. Please try again.")
+                continue
+
+            return aware_end_date
+
+
+    @staticmethod
+    def modify_event(event: Evenement, modifications: dict) -> Evenement:
+        try:
+            for key, value in modifications.items():
+                setattr(event, key, value)
+
+            event.full_clean()
+            event.save()
+            return event
+
+        except ValidationError as e:
+            raise ValidationError(f"Validation error while modifying the event: {e}")
+        except DatabaseError as e:
+            raise DatabaseError("Problem with database access while modifying the event.") from e
+        except Exception as e:
+            raise Exception(f"Unexpected error occurred while modifying the event: {e}")
