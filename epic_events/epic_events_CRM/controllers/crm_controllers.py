@@ -4,7 +4,11 @@ from crm.models import Collaborator
 from services.crm_functions import CRMFunctions
 from views.crm_views import CRMView
 from controllers.menus.management_controller import ManagementController
+from controllers.menus.sales_controller import SalesController
 from views.menus.management_view import ManagementView
+from views.menus.general_view import GeneralView
+from views.menus.sales_view import SalesView
+from controllers.menus.general_controller import GeneralController
 
 
 class CRMController:
@@ -40,10 +44,16 @@ class CRMController:
             case "support":
                 print("Support role")
             case "sales":
-                print("Sales role")
+                view_cli = SalesView()
+                general_view = GeneralView()
+                general_controller = GeneralController(collaborator, self.crm_services, general_view)
+                sales_role_controller = SalesController(collaborator, self.crm_services, view_cli, general_controller,general_view)
+                sales_role_controller.start()
             case "management":
                 view_cli = ManagementView()
-                management_role_controller = ManagementController(collaborator, self.crm_services, view_cli)
+                general_view = GeneralView()
+                general_controller = GeneralController(collaborator, self.crm_services, general_view)
+                management_role_controller = ManagementController(collaborator, self.crm_services, view_cli, general_controller, general_view)
                 management_role_controller.start()
             case _:
                 self.view_cli.display_warning_message("Your role does not have specific task assigned.")

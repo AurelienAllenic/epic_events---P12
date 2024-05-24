@@ -66,10 +66,10 @@ def create_collaborator(first_name, last_name, username, email, role_name, emplo
 
 
 create_collaborator("Aurelien", "Allenic", "aurelien", "aurelien.allenic@gmail.com",
-                    "management", "9473", "managementPassword9473",
+                    "management", "9473", "manageMdp1",
                     "management_team")
-create_collaborator("Boris", "Johnson", "borisSales", "alex.sales@example.net",
-                    "sales", "9474", "SalesPassword9474", "sales_team")
+create_collaborator("Boris", "Johnson", "sales", "alex.sales@example.net",
+                    "sales", "9474", "salesMdp1", "sales_team")
 create_collaborator("Emma", "Stone", "emmaStone", "emma.stone@example.net",
                     "support", "9475", "SupportPassword9475",
                     "support_team")
@@ -100,19 +100,19 @@ def create_client(name, email, phone, company_name, commercial_contact):
 
 clients_data = [
     {"name": "first client", "email": "first.client@client.com", "phone": "0625324428", "company_name": "first company",
-     "commercial_contact": "aurelien"},
+     "commercial_contact": "sales"},
     {"name": "second client", "email": "second.client@client.com", "phone": "0398562412", "company_name": "second company",
-     "commercial_contact": "aurelien"},
+     "commercial_contact": "sales"},
     {"name": "third client", "email": "third.client@client.com", "phone": "0451289563",
-     "company_name": "third company", "commercial_contact": "aurelien"}
+     "company_name": "third company", "commercial_contact": "sales"}
 ]
 
 for client_data in clients_data:
     create_client(**client_data)
 
 contracts_data = [
-    {"client_infos": "first client", "commercial_contact": "aurelien", "value": 1000, "due": 200, "status": "open"},
-    {"client_infos": "second client", "commercial_contact": "aurelien", "value": 1500, "due": 300, "status": "open"}
+    {"client_infos": "first client", "commercial_contact": "sales", "value": 1000, "due": 200, "status": "signed"},
+    {"client_infos": "second client", "commercial_contact": "sales", "value": 1500, "due": 300, "status": "signed"}
 ]
 
 contracts = {}

@@ -10,6 +10,7 @@ from django.db.models import Model
 from typing import List, Optional, Any
 from django.contrib.auth.models import Group
 from django.db.models import QuerySet
+from datetime import datetime
 
 
 class CRMFunctions:
@@ -55,8 +56,10 @@ class CRMFunctions:
     def get_all_objects(object_type: str) -> Optional[List[Any]]:
         try:
             if object_type.lower() == "collaborators":
+                print('collaborator ICI')
                 return Collaborator.objects.all()
             elif object_type.lower() == "contracts2" or object_type.lower() == "clients":
+                print('clients ICI')
                 return Client.objects.all()
             elif object_type.lower() == "contracts":
                 return Contract.objects.all()
@@ -266,3 +269,162 @@ class CRMFunctions:
             raise DatabaseError("Problem with the database access during the support contact assignment") from e
         except Exception as e:
             raise Exception("Unexpected error occurred during the support contact assignment") from e
+        
+    @staticmethod
+    def create_client(name: str,
+                        email: str,
+                        phone: str,
+                        company_name: str,
+                        commercial_contact: Collaborator) -> Client:
+
+        if Client.objects.filter(email=email).exists():
+            raise ValidationError(f"The {email} is already in use.")
+
+        try:
+            new_client = Client(
+                name=name,
+                email=email,
+                phone=phone,
+                company_name=company_name,
+                commercial_contact=commercial_contact
+            )
+
+            new_client.full_clean()
+            new_client.save()
+
+            return new_client
+        except ValidationError as e:
+            raise ValidationError(f"Validation error: {e}") from e
+        except DatabaseError as e:
+            raise DatabaseError("Problem with database access") from e
+        except Exception as e:
+            raise Exception("Unexpected error creating client") from e
+
+    @staticmethod
+    def modify_client(client: Client, modifications: dict) -> Client:
+        try:
+            for key, value in modifications.items():
+                setattr(client, key, value)
+
+            client.full_clean()
+            client.save()
+            return client
+
+        except ValidationError as e:
+            raise ValidationError(f"Validation error while modifying the client: {e}") from e
+        except DatabaseError as e:
+            raise DatabaseError("Problem with database access") from e
+        except Exception as e:
+            raise Exception("Unexpected error modifying client.") from e
+
+
+    def get_filtered_contracts_for_collaborator(self, collaborator_id: int, filter_type: str = None) -> QuerySet[Contract]:
+        try:
+            print('try de get filtered contracts', collaborator_id, filter_type)
+            
+            # Récupérer les clients associés au collaborateur
+            clients = self.get_clients_for_collaborator(collaborator_id)
+            print('clients', clients)
+            
+            # Filtrer les contrats en utilisant la clé étrangère 'client_infos'
+            contracts = Contract.objects.filter(client_infos__in=clients)
+            print('contracts', contracts)
+
+            # Afficher le type de filtre et les statuts distincts dans la base de données
+            print('filter_type:', filter_type)
+            distinct_statuses = Contract.objects.values_list('status', flat=True).distinct()
+            print('Distinct statuses in the database:', distinct_statuses)
+            
+            # Afficher tous les contrats avec leur statut avant d'appliquer le filtre
+            for contract in contracts:
+                print(f'Contract ID: {contract.id}, Status: {contract.status}')
+            
+            # Appliquer les filtres supplémentaires en fonction du type de filtre
+            match filter_type:
+                case "signed":
+                    print('heres the contracts SIGNED 1', contracts)
+                    contracts = contracts.filter(status="signed")
+                    print('heres the contracts SIGNED', contracts)
+                case "not_signed":
+                    contracts = contracts.filter(status="not_signed")
+                    print('heres the contracts NOT SIGNED', contracts)
+                case "no_fully_paid":
+                    contracts = contracts.filter(status="open")
+                    print('heres the contracts OPEN', contracts)
+                case None:
+                    print('no additional filter applied')
+                    pass  # Pas de filtrage supplémentaire si filter_type est None
+                case _:
+                    raise ValueError(f"Unsupported filter type: {filter_type}")
+            
+            # Afficher tous les contrats avec leur statut après avoir appliqué le filtre
+            for contract in contracts:
+                print(f'Filtered Contract ID: {contract.id}, Status: {contract.status}')
+            
+            # Vérifier si des contrats existent après les filtres
+            if not contracts.exists():
+                print('There are no contracts to display')
+            else:
+                print('Filtered contracts:', contracts)
+
+            return contracts
+        except DatabaseError as e:
+            raise DatabaseError("Problem with database access") from e
+        except Exception as e:
+            raise Exception("Unexpected error retrieving contracts.") from e
+
+
+    @staticmethod
+    def get_clients_for_collaborator(collaborator_id: int) -> QuerySet[Evenement]:
+        try:
+            clients_of_collaborator = Client.objects.filter(commercial_contact_id=collaborator_id)
+            return clients_of_collaborator
+        except DatabaseError as e:
+            raise DatabaseError("Problem with database access") from e
+        except Exception as e:
+            raise Exception("Unexpected error retrieving clients") from e
+
+
+    @staticmethod
+    def create_event(contract: Contract,
+                    client_name: str,
+                    name: str,
+                    client_contact: str,
+                    support_contact: str,
+                    day_start: datetime,
+                    date_end: datetime,
+                    location: str,
+                    attendees: int,
+                    notes: str) -> Evenement:
+        try:
+            client = Client.objects.get(name=client_name)
+        except Client.DoesNotExist:
+            raise ValueError(f"Client '{client_name}' not found")
+
+        try:
+            support_contact_obj = Collaborator.objects.get(username=support_contact)
+        except Collaborator.DoesNotExist:
+            raise ValueError(f"Support contact '{support_contact}' not found")
+
+        try:
+            event = Evenement.objects.create(
+                contract=contract,
+                client=client,
+                client_name=client_name,
+                name=name,
+                client_contact=client_contact,
+                support_contact=support_contact_obj,
+                day_start=day_start,
+                date_end=date_end,
+                location=location,
+                attendees=attendees,
+                notes=notes
+            )
+            print(f"Event '{event}' created successfully.")
+            return event
+        except ValidationError as e:
+            raise ValidationError(f"ValidationError: {e}") from e
+        except DatabaseError as e:
+            raise DatabaseError(f"DatabaseError: {e}") from e
+        except Exception as e:
+            raise Exception(f"An unexpected error occurred while creating the event: {e}") from e
