@@ -9,7 +9,8 @@ from views.menus.management_view import ManagementView
 from views.menus.general_view import GeneralView
 from views.menus.sales_view import SalesView
 from controllers.menus.general_controller import GeneralController
-
+from controllers.menus.support_controller import SupportController
+from views.menus.support_view import SupportView
 
 class CRMController:
     def __init__(self):
@@ -42,7 +43,11 @@ class CRMController:
 
         match role_name:
             case "support":
-                print("Support role")
+                view_cli = SupportView()
+                general_view = GeneralView()
+                general_controller = GeneralController(collaborator, self.crm_services, general_view)
+                support_role_controller = SupportController(collaborator, self.crm_services, view_cli, general_controller,general_view)
+                support_role_controller.start()
             case "sales":
                 view_cli = SalesView()
                 general_view = GeneralView()

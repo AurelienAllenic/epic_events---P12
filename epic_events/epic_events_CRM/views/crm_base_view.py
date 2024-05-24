@@ -42,6 +42,7 @@ class BaseView:
 
     def prompt_for_selection_by_id(self, ids: List[int], model_name: str) -> int:
     # Ask the user to choose an ID
+        print('on est dans la fonction prompt_for_selection_by_id')
         while True:
             selected_id = click.prompt(f"Please enter the ID of the {model_name} you wish to select.", type=int)
             print("Selected ID:", selected_id)
