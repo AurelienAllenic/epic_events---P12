@@ -346,7 +346,7 @@ class CRMFunctions:
                 case "not_signed":
                     contracts = contracts.filter(status="not_signed")
                     print('heres the contracts NOT SIGNED', contracts)
-                case "open":
+                case "no_fully_paid":
                     contracts = contracts.filter(status="open")
                     print('heres the contracts OPEN', contracts)
                 case None:
@@ -388,30 +388,41 @@ class CRMFunctions:
                     client_name: str,
                     name: str,
                     client_contact: str,
-                    start_date: datetime,
+                    support_contact: str,
+                    day_start: datetime,
                     date_end: datetime,
                     location: str,
                     attendees: int,
                     notes: str) -> Evenement:
+        try:
+            client = Client.objects.get(name=client_name)
+        except Client.DoesNotExist:
+            raise ValueError(f"Client '{client_name}' not found")
 
         try:
-            event = Evenement(
+            support_contact_obj = Collaborator.objects.get(username=support_contact)
+        except Collaborator.DoesNotExist:
+            raise ValueError(f"Support contact '{support_contact}' not found")
+
+        try:
+            event = Evenement.objects.create(
                 contract=contract,
+                client=client,
                 client_name=client_name,
                 name=name,
                 client_contact=client_contact,
-                start_date=start_date,
+                support_contact=support_contact_obj,
+                day_start=day_start,
                 date_end=date_end,
                 location=location,
                 attendees=attendees,
                 notes=notes
             )
-            # Saves the new event to the database
-            event.save()
+            print(f"Event '{event}' created successfully.")
             return event
         except ValidationError as e:
             raise ValidationError(f"ValidationError: {e}") from e
         except DatabaseError as e:
-            raise DatabaseError("Problem with the database") from e
+            raise DatabaseError(f"DatabaseError: {e}") from e
         except Exception as e:
-            raise Exception("An unexpected error occurred while creating the event") from e
+            raise Exception(f"An unexpected error occurred while creating the event: {e}") from e

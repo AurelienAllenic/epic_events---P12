@@ -42,8 +42,9 @@ class SalesView(BaseView):
         client_name = self.get_valid_input_with_limit("Client Name", 100)
         name = self.get_valid_input_with_limit("Name", 255)
         client_contact = self.get_valid_input_with_limit("Client Contact", 1000)
-        start_date = self.get_valid_start_date()
-        date_end = self.get_valid_end_date(start_date)
+        support_contact = self.get_valid_input_with_limit("support Contact", 1000)
+        day_start = self.get_valid_start_date()
+        date_end = self.get_valid_end_date(day_start)
         location = self.get_valid_input_with_limit("Location", 300)
         attendees = self.get_valid_input_positive_integer("Attendees")
         notes = click.prompt("Notes (optional)", default="", show_default=False).strip()
@@ -52,7 +53,8 @@ class SalesView(BaseView):
             "client_name": client_name,
             "name": name,
             "client_contact": client_contact,
-            "start_date": start_date,
+            "support_contact": support_contact,
+            "day_start": day_start,
             "date_end": date_end,
             "location": location,
             "attendees": attendees,
