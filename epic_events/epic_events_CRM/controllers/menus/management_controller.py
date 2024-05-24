@@ -78,6 +78,11 @@ class ManagementController:
             case _:
                 print('case')
 
+        continue_operation = self.view_cli.ask_user_if_continue()
+
+        if not continue_operation:
+            return
+
 
     def manage_management_objects(self, object_type: str) -> None:
         self.view_cli.clear_screen()
