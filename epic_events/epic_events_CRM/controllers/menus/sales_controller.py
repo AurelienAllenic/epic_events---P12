@@ -37,16 +37,12 @@ class SalesController:
     def __init__(self, collaborator: Collaborator,
                 services_crm: CRMFunctions,
                 view_cli: SalesView,
-                view_management: ManagementView,
-                management_controller: ManagementController,
                 general_controller : GeneralController,
                 general_view : GeneralView
                 ):
         self.collaborator = collaborator
         self.services_crm = services_crm
         self.view_cli = view_cli
-        self.view_management = view_management
-        self.management_controller = management_controller
         self.general_controller = general_controller
         self.general_view = general_view
 

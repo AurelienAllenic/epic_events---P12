@@ -47,10 +47,7 @@ class CRMController:
                 view_cli = SalesView()
                 general_view = GeneralView()
                 general_controller = GeneralController(collaborator, self.crm_services, general_view)
-                view_cli_management = ManagementView()
-                management_role_controller = ManagementController(collaborator, self.crm_services, view_cli_management, general_controller, general_view)
-                sales_role_controller = SalesController(collaborator, self.crm_services, view_cli, view_cli_management, management_role_controller, general_controller,general_view)
-                
+                sales_role_controller = SalesController(collaborator, self.crm_services, view_cli, general_controller,general_view)
                 sales_role_controller.start()
             case "management":
                 view_cli = ManagementView()
