@@ -5,6 +5,8 @@ from django.core.exceptions import ValidationError
 from typing import Any, List, Optional
 from django.db import DatabaseError
 from django.db.models.query import QuerySet
+from controllers.menus.general_controller import GeneralController
+from views.menus.general_view import GeneralView
 
 class ManagementController:
     MAIN_MENU_OPTIONS_MANAGEMENT = [
@@ -40,10 +42,15 @@ class ManagementController:
 
     def __init__(self, collaborator: Collaborator,
                 services_crm: CRMFunctions,
-                view_cli: ManagementView):
+                view_cli: ManagementView,
+                general_controller : GeneralController,
+                general_view : GeneralView
+                ):
         self.collaborator = collaborator
         self.services_crm = services_crm
         self.view_cli = view_cli
+        self.general_controller = general_controller
+        self.general_view = general_view
 
 
     def start(self) -> None:
@@ -61,35 +68,21 @@ class ManagementController:
             case 4:
                 self.modify_support_contact()
             case 5:
-                self.show_all_management_objects("Clients")
+                self.general_controller.show_all_objects("Clients")
             case 6:
-                self.show_all_management_objects("Contracts")
+                self.general_controller.show_all_objects("Contracts")
             case 7:
-                self.show_all_management_objects("Events")
+                self.general_controller.show_all_objects("Events")
             case 8:
                 return
             case _:
                 print('case')
 
 
-    def show_all_management_objects(self, object_type: str) -> None:
-        self.view_cli.clear_screen()
-        objects = CRMFunctions.get_all_objects(object_type)
-        if not objects:
-            print(f"No {object_type} found.")
-            return
-
-        if object_type.lower() == "clients":
-            self.view_cli.display_list(objects, object_type)
-        elif object_type.lower() == "contracts" or object_type.lower() == "contracts2":
-            self.view_cli.display_list(objects, "contracts")
-        elif object_type.lower() == "events":
-            self.view_cli.display_list(objects, object_type)
-
-
     def manage_management_objects(self, object_type: str) -> None:
         self.view_cli.clear_screen()
         choice = None
+        print("mon object type", object_type)
         if object_type.lower() == "collaborators" or object_type.lower() == "clients":
             self.view_cli.show_menu(self.collaborator.get_full_name(), self.SUB_MENU_MANAGE_COLLABORATORS_MANAGEMENT)
             choice = self.view_cli.get_collaborator_choice(limit=len(self.SUB_MENU_MANAGE_COLLABORATORS_MANAGEMENT))
@@ -105,9 +98,10 @@ class ManagementController:
         if choice != None:
             match choice:
                 case 1:
-                    self.instance_creation(object_type)
+                    print('ici nous avons notre object type', object_type)
+                    self.general_controller.instance_creation(object_type)
                 case 2:
-                    self.instance_modification(object_type)
+                    self.general_controller.instance_modification(object_type)
                 case 3:
                     if object_type.lower() == "contracts":
                         self.start()
@@ -154,199 +148,6 @@ class ManagementController:
         self.view_cli.display_list(events_to_show, "events")
 
 
-    def instance_creation(self, object_type: str) -> None:
-        print('nous sommes dans instance Creation')
-        if object_type.lower() == "collaborators":
-            print('nous sommes dans instance Creation pour les collaborators')
-            while True:
-                self.view_cli.clear_screen()
-                self.view_cli.display_info_message("Registering new collaborator...")
-
-                data_collaborator = self.view_cli.get_data_for_create_object("collaborators")
-                print(data_collaborator)
-                try:
-                    collaborator = self.services_crm.register_collaborator(**data_collaborator)
-
-                    self.view_cli.clear_screen()
-                    self.view_cli.display_info_message("User registered successfully!")
-
-                    break
-                except Exception as e:
-                    self.view_cli.display_error_message(str(e))
-                    break
-        elif object_type.lower() == "contracts":
-            print('nous sommes dans instance Creation pour les contracts')
-            self.view_cli.clear_screen()
-            print(f"Creating contract for client... of type {object_type}...")
-            clients = CRMFunctions.get_all_objects('clients')
-            contracts = CRMFunctions.get_all_objects('contracts')
-            print(f'the clients are {clients}')
-            print(f'the contracts are {contracts}')
-            if not clients:
-                print("No clients for the moment")
-                return
-            selected_contract = self.select_object_from(clients, "contracts")
-            selected_client = self.select_object_from(clients, "contracts")
-
-            if not selected_client:
-                return print("No client selected.")
-
-            self.create_contract_for(selected_client)
-        elif object_type.lower() == "clients":
-            self.view_cli.clear_screen()
-            self.view_cli.display_info_message("Creating a new client...")
-
-            client_data = self.view_cli.get_data_for_create_object('clients')
-            print(client_data)
-            client_data['commercial_contact'] = self.collaborator
-            try:
-                print("client data :", client_data)
-                client = self.services_crm.create_client(**client_data)
-                self.view_cli.clear_screen()
-                self.view_cli.display_info_message("Client created successfully!")
-            except Exception as e:
-                self.view_cli.display_error_message(str(e))
-        else:
-            print("Invalid object type specified.")
-            return
-
-
-    def create_contract_for(self, client: Client) -> None:
-        print('create function atteinte')
-        self.view_cli.clear_screen()
-        self.view_cli.display_object_details(client)
-        self.view_cli.display_info_message(f"You are creating a new contract for: {client.name}")
-
-        # Get contract data from the user
-        data_contract = self.view_cli.get_data_for_create_object('contracts')
-        data_contract["client_infos"] = client
-        data_contract["commercial_contact"] = client.commercial_contact
-
-        try:
-            # Create the contract using CRM service
-            new_contract = self.services_crm.create_contract(**data_contract)
-            self.view_cli.display_info_message("Contract created successfully.")
-            self.view_cli.display_object_details(new_contract)
-
-        except ValidationError as e:
-            # Handle validation error
-            self.view_cli.display_error_message(f"Validation error: {e}")
-        except DatabaseError:
-            # Handle database error
-            self.view_cli.display_error_message("A database error occurred. Please try again later.")
-        except Exception as e:
-            # Handle unexpected error
-            self.view_cli.display_error_message(f"An unexpected error occurred: {e}")
-
-
-    def instance_modification(self, object_type: str) -> None:
-        self.view_cli.clear_screen()
-        if object_type.lower() == "contracts":
-            our_objects = CRMFunctions.get_all_objects("contracts")
-        else:
-            our_objects = CRMFunctions.get_all_objects(object_type)
-
-        if not our_objects:
-            return
-
-        selected_object = self.select_object_from(our_objects, object_type)
-
-        if not selected_object:
-            return
-
-        self.modify_object(selected_object)
-
-
-    def select_object_from(self, list_of_objects: List[Any], object_type: str, message: Optional[str] = None) -> Optional[Any]:
-        print('on rentre dans la fonction select object from')
-        self.view_cli.clear_screen()
-        print('list of objects', list_of_objects)
-        self.view_cli.display_objects_for_selection(list_of_objects)
-
-        if message:
-            self.view_cli.display_info_message(message)
-
-        objects_ids = [obj.id for obj in list_of_objects]
-        print('object type dans select object from', object_type)
-        selected_object_id = self.view_cli.prompt_for_selection_by_id(objects_ids, object_type)
-
-        selected_object = next((obj for obj in list_of_objects if obj.id == selected_object_id), None)
-
-        if not selected_object:
-            self.view_cli.display_error_message(f"We couldn't find the {object_type}. Please try again later.")
-        print(f"Selected object: {selected_object}")
-        return selected_object
-    
-
-    def modify_object(self, selected_item: Any) -> None:
-        if isinstance(selected_item, Client):
-            self.view_cli.clear_screen()
-            self.view_cli.display_item_details(selected_item)
-            modifications = self.view_cli.get_data_for_client_modification()
-
-            # Checks if no modifications were provided.
-            if not modifications:
-                # Informs the user that no modifications were made and exits.
-                self.view_cli.display_info_message("No modifications were made.")
-                return
-
-            try:
-                # Attempts to modify the client using the provided data
-                client_modified = self.services_crm.modify_client(selected_item, modifications)
-                self.view_cli.clear_screen()
-                self.view_cli.display_item_details(client_modified)
-                self.view_cli.display_info_message("The client has been modified successfully.")
-            except ValidationError as e:
-                self.view_cli.display_error_message(str(e))
-            except DatabaseError:
-                self.view_cli.display_error_message("I encountered a problem with the database. Please try again.")
-            except Exception as e:
-                self.view_cli.display_error_message(str(e))
-        elif isinstance(selected_item, Contract):
-            
-            self.view_cli.clear_screen()
-            self.view_cli.display_item_details(selected_item)
-            contract_data = self.view_cli.get_data_for_modify_contract()
-
-            if not contract_data:
-                self.view_cli.display_info_message("No modifications were made.")
-                return
-            
-            try:
-                contract_modified = self.services_crm.modify_contract(selected_item, contract_data)
-                self.view_cli.clear_screen()
-                self.view_cli.display_object_details(contract_modified)
-                self.view_cli.display_info_message("The contract has been modified successfully.")
-                return
-            except ValidationError as e:
-                self.view_cli.display_error_message(str(e))
-            except DatabaseError:
-                self.view_cli.display_error_message("I encountered a problem with the database. Please try again later.")
-            except Exception as e:
-                self.view_cli.display_error_message(str(e))
-        elif isinstance(selected_item, Collaborator):
-            print("Colaborator modification.", {selected_item})
-            while True:
-                self.view_cli.display_item_details(selected_item)
-                collaborator_data = self.view_cli.get_data_for_modify_collaborator(selected_item.get_full_name())
-
-                if not collaborator_data:
-                    self.view_cli.display_info_message("No modifications were made.")
-                    return
-
-                try:
-                    collaborator_modified = self.services_crm.modify_collaborator(selected_item, collaborator_data)
-                    self.view_cli.clear_screen()
-                    self.view_cli.display_item_details(collaborator_modified)
-                    self.view_cli.display_info_message("The collaborator has been modified successfully.")
-                    break
-                except Exception as e:
-                    self.view_cli.display_error_message(str(e))
-                    break
-        else:
-            print("Unsupported item type for modification:", type(selected_item))
-
-
     def modify_support_contact(self) -> None:
         self.view_cli.clear_screen()
 
@@ -354,7 +155,7 @@ class ManagementController:
         if not events:
             return
         print(events, 'events')
-        selected_event = self.select_object_from(events, object_type="Events")
+        selected_event = self.general_controller.select_object_from(events, object_type="Events")
         if not selected_event:
             return
 
@@ -363,7 +164,7 @@ class ManagementController:
         if not support_collaborators:
             return
         
-        selected_support_collaborator = self.select_object_from(support_collaborators,
+        selected_support_collaborator = self.general_controller.select_object_from(support_collaborators,
                                                             "collaborators")
         print("selected_support_collaborator", selected_support_collaborator)
         print(type(selected_event), 'le type de selected event')
@@ -385,7 +186,7 @@ class ManagementController:
         if not our_objects:
             return
 
-        select_collaborator = self.select_object_from(our_objects, object_type)
+        select_collaborator = self.general_controller.select_object_from(our_objects, object_type)
         if not select_collaborator:
             return
 

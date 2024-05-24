@@ -11,7 +11,9 @@ from crm.models import Evenement
 from services.crm_functions import CRMFunctions
 from views.menus.sales_view import SalesView
 from views.menus.management_view import ManagementView
+from views.menus.general_view import GeneralView
 from controllers.menus.management_controller import ManagementController
+from controllers.menus.general_controller import GeneralController
 
 class SalesController:
 
@@ -36,13 +38,17 @@ class SalesController:
                 services_crm: CRMFunctions,
                 view_cli: SalesView,
                 view_management: ManagementView,
-                management_controller: ManagementController
+                management_controller: ManagementController,
+                general_controller : GeneralController,
+                general_view : GeneralView
                 ):
         self.collaborator = collaborator
         self.services_crm = services_crm
         self.view_cli = view_cli
         self.view_management = view_management
         self.management_controller = management_controller
+        self.general_controller = general_controller
+        self.general_view = general_view
 
     def start(self):
         print("Starting the sales role...")
@@ -58,9 +64,9 @@ class SalesController:
                 user_sub_menu_choice = self.view_cli.get_user_menu_choice()
                 match user_sub_menu_choice:
                     case 1:
-                        self.management_controller.instance_creation("clients")
+                        self.general_controller.instance_creation("clients")
                     case 2:
-                        self.management_controller.instance_modification("clients")
+                        self.general_controller.instance_modification("clients")
                     case 3:
                         self.process_contract_modification()
                     case 4:
@@ -72,21 +78,18 @@ class SalesController:
                             level='error')
                         self.view_cli.display_error_message("Invalid option selected. Please try again.")
             case 2:
-                #  Filter contracts
-                print("Filtering contracts...")
                 self.filter_contracts()
                 pass
             case 3:
-                # Create an event for a client
                 self.process_event_creation()
                 pass
             case 4:
-                self.management_controller.show_all_management_objects("Clients")
+                self.general_controller.show_all_objects("Clients")
                 pass
             case 5:
-                self.management_controller.show_all_management_objects("Contracts")
+                self.general_controller.show_all_objects("Contracts")
             case 6:
-                self.management_controller.show_all_management_objects("Events")
+                self.general_controller.show_all_objects("Events")
             case 7:
                 print("Exit the CRM system")
                 return
@@ -112,11 +115,12 @@ class SalesController:
             if not contracts:
                 return
 
-            selected_contract = self.management_controller.select_object_from(contracts)
+            selected_contract = self.general_controller.select_object_from(contracts)
             if not selected_contract:
                 return
 
             self.services_crm.modify_contract(selected_contract)
+
 
     def get_contracts_assigned_to(self, collaborator_id: int, filter_type: str = None) -> List[Contract]:
         try:
@@ -137,6 +141,7 @@ class SalesController:
 
         return contracts
 
+
     def process_event_creation(self) -> None:
         self.view_cli.clear_screen()
 
@@ -145,7 +150,7 @@ class SalesController:
         if not signed_contracts:
             return
 
-        selected_contract = self.management_controller.select_object_from(signed_contracts, "Events")
+        selected_contract = self.general_controller.select_object_from(signed_contracts, "Events")
         if not selected_contract:
             return
 
@@ -205,7 +210,7 @@ class SalesController:
         if not contracts:
             return
 
-        selected_contract = self.management_controller.select_object_from(contracts, "Contracts")
+        selected_contract = self.general_controller.select_object_from(contracts, "Contracts")
         if not selected_contract:
             return
 
@@ -215,14 +220,11 @@ class SalesController:
     def modify_contract(self, contract: Contract) -> None:
         self.view_cli.clear_screen()
 
-        # Displays the details of the event to be modified.
         self.view_cli.display_contract_details(contract)
 
         modifications = self.view_cli.get_data_for_contract_modification()
 
-        # Checks if no modifications were provided.
         if not modifications:
-            # Informs the user that no modifications were made and exits.
             self.view_cli.display_info_message("No modifications were made.")
             return
 
@@ -230,10 +232,8 @@ class SalesController:
             contract_modified = self.services_crm.modify_contract(contract, modifications)
             self.view_cli.clear_screen()
 
-            # Display the details of the modified contract
             self.view_cli.display_contract_details(contract_modified)
 
-            # Inform the user tht the contract has been modifies successfully
             self.view_cli.display_info_message("The contract has been modified successfully.")
             return
         except ValidationError as e:

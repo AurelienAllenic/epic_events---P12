@@ -7,7 +7,7 @@ from rich.box import ROUNDED
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
-from crm.models import Contract, Client, Evenement
+from crm.models import Contract, Client, Evenement, Collaborator
 
 
 class BaseView:
@@ -406,6 +406,7 @@ class BaseView:
         has_evenement = any(isinstance(obj, Evenement) for obj in objects)
         has_contract = any(isinstance(obj, Contract) for obj in objects)
         has_client = any(isinstance(obj, Client) for obj in objects)
+        has_collaborator = any(isinstance(obj, Collaborator) for obj in objects)
 
         # Création de la table en fonction des types d'objets présents dans la liste
         table = Table(show_header=True, header_style="bold magenta", expand=True)
@@ -417,11 +418,15 @@ class BaseView:
         elif has_contract:
             title = "List of Available Contracts"
             columns = [("Contract ID", "dim", 12), ("Client Name", "", 20), ("Status", "", 12)]
-            data = [(str(obj.id), obj.client.full_name if obj.client.full_name else "No Name", obj.get_status_display()) for obj in objects if isinstance(obj, Contract)]
+            data = [(str(obj.id), obj.client_infos.name if obj.client_infos.name else "No Name", obj.get_status_display()) for obj in objects if isinstance(obj, Contract)]
         elif has_client:
             title = "List of Available Clients"
             columns = [("ID", "dim", 10), ("Full Name", "dim", 20)]
             data = [(str(obj.id), obj.name if obj.name else "No Name") for obj in objects if isinstance(obj, Client)]
+        elif has_collaborator:
+            title = "List of Available Collaborators"
+            columns = [("ID", "dim", 10), ("Full Name", "dim", 20), ("role", "dim", 12)]
+            data = [(str(obj.id), obj.get_full_name(), obj.role.name if obj.role else "No Role") for obj in objects if isinstance(obj, Collaborator)]
         else:
             console.print("Objects list contains objects of different types")
             return

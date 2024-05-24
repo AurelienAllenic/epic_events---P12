@@ -56,8 +56,10 @@ class CRMFunctions:
     def get_all_objects(object_type: str) -> Optional[List[Any]]:
         try:
             if object_type.lower() == "collaborators":
+                print('collaborator ICI')
                 return Collaborator.objects.all()
             elif object_type.lower() == "contracts2" or object_type.lower() == "clients":
+                print('clients ICI')
                 return Client.objects.all()
             elif object_type.lower() == "contracts":
                 return Contract.objects.all()
