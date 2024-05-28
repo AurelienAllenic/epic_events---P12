@@ -4,9 +4,9 @@ from views.menus.management_view import ManagementView
 from django.core.exceptions import ValidationError
 from typing import Any, List, Optional
 from django.db import DatabaseError
-from django.db.models.query import QuerySet
 from controllers.menus.general_controller import GeneralController
 from views.menus.general_view import GeneralView
+from sentry_sdk import capture_message
 
 class ManagementController:
     MAIN_MENU_OPTIONS_MANAGEMENT = [
@@ -76,18 +76,47 @@ class ManagementController:
             case 8:
                 return
             case _:
-                print('case')
+                capture_message(
+                    f"Invalid menu option : {choice}. in start() - management controller."
+                    f"Expected options between 1 and {len(self.MAIN_MENU_OPTIONS_MANAGEMENT)}.",
+                    level='error')
+                self.view_cli.display_error_message("Invalid option selected. Please try again.")
 
         continue_operation = self.view_cli.ask_user_if_continue()
 
         if not continue_operation:
             return
+        
+        self.start()
 
 
     def manage_management_objects(self, object_type: str) -> None:
         self.view_cli.clear_screen()
+
+        # Check for Permissions according to the object_type
+        if object_type.lower() == "collaborators":
+            if not self.collaborator.has_perm("crm.manage_collaborators"):
+                capture_message(f"Unauthorized access attempt by collaborator: {self.collaborator.username}"
+                            f" to manage {object_type}.", level="info")
+                self.view_cli.display_error_message(f"You do not have permission to manage {object_type}.")
+                return
+            user_perms = self.collaborator.user_permissions
+            print("Permissions de l'utilisateur :", user_perms)
+        elif object_type.lower() == "contracts":
+            if not self.collaborator.has_perm("crm.manage_contracts_creation_modification"):
+                capture_message(f"Unauthorized access attempt by collaborator: {self.collaborator.username}"
+                            f" to manage {object_type}.", level="info")
+                self.view_cli.display_error_message(f"You do not have permission to manage {object_type}.")
+                return
+        elif object_type.lower() == "events":
+            if not self.collaborator.has_perm("crm.view_event"):
+                capture_message(f"Unauthorized access attempt by collaborator: {self.collaborator.username}"
+                            f" to manage {object_type}.", level="info")
+
+                self.view_cli.display_error_message(f"You do not have permission to manage {object_type}.")
+                return
+
         choice = None
-        print("mon object type", object_type)
         if object_type.lower() == "collaborators" or object_type.lower() == "clients":
             self.view_cli.show_menu(self.collaborator.get_full_name(), self.SUB_MENU_MANAGE_COLLABORATORS_MANAGEMENT)
             choice = self.view_cli.get_collaborator_choice(limit=len(self.SUB_MENU_MANAGE_COLLABORATORS_MANAGEMENT))
@@ -103,7 +132,6 @@ class ManagementController:
         if choice != None:
             match choice:
                 case 1:
-                    print('ici nous avons notre object type', object_type)
                     self.general_controller.instance_creation(object_type)
                 case 2:
                     self.general_controller.instance_modification(object_type)
@@ -115,10 +143,12 @@ class ManagementController:
                 case 4:
                     if(object_type.lower() != "contracts"):
                         self.start()
-                    print("Nous ne devrions pas voir celà.")
                     return
                 case _:
-                    print("Invalid option selected. Please try again.")
+                    capture_message(
+                    f"Invalid option : {choice}. in start() - management controller."
+                    f"Expected between 1 and 3 if object_type is contracts and 4 if object_type is events.",
+                    level='error')
                     self.view_cli.display_info_message("Invalid option selected. Please try again.")
                     return
         else:
@@ -130,7 +160,10 @@ class ManagementController:
                 case 3:
                     self.start()
                 case _:
-                    print("Invalid option selected. Please try again.")
+                    capture_message(
+                    f"Invalid menu option : {choice}. in start() - management controller."
+                    f"Expected options between 1 and {len(self.SUB_MENU_EVENTS_MANAGEMENT)}.",
+                    level='error')
                     self.view_cli.display_info_message("Invalid option selected. Please try again.")
                     return
 

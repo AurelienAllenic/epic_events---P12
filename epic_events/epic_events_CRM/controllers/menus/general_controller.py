@@ -4,6 +4,8 @@ from views.menus.general_view import GeneralView
 from typing import Any, List, Optional
 from django.core.exceptions import ValidationError
 from django.db import DatabaseError
+from sentry_sdk import capture_message
+
 
 
 class GeneralController:
@@ -17,6 +19,27 @@ class GeneralController:
 
     def instance_creation(self, object_type: str) -> None:
             print('nous sommes dans instance Creation')
+
+            if object_type.lower() == "clients":
+                if not self.collaborator.has_perm("crm.add_client"):
+                    capture_message(f"Unauthorized access attempt by collaborator: {self.collaborator.username}"
+                                f" to manage {object_type}.", level="info")
+                    self.general_view.display_error_message(f"You do not have permission to manage {object_type}.")
+                    return
+            elif object_type.lower() == "contracts":
+                if not self.collaborator.has_perm("crm.manage_contracts_creation_modification"):
+                    capture_message(f"Unauthorized access attempt by collaborator: {self.collaborator.username}"
+                                    f" to manage {object_type}.", level="info")
+                    self.general_view.display_error_message(f"You do not have permission to manage {object_type}.")
+                    return
+            elif object_type.lower() == "events":
+                if not self.collaborator.has_perm("crm.view_event"):
+                    capture_message(f"Unauthorized access attempt by collaborator: {self.collaborator.username}"
+                                    f" to manage {object_type}.", level="info")
+
+                self.general_view.display_error_message(f"You do not have permission to manage {object_type}.")
+                return
+
             if object_type.lower() == "collaborators":
                 print('nous sommes dans instance Creation pour les collaborators')
                 while True:
@@ -253,9 +276,32 @@ class GeneralController:
     def show_all_objects(self, object_type: str) -> None:
         self.general_view.clear_screen()
         objects = CRMFunctions.get_all_objects(object_type)
+
         if not objects:
             print(f"No {object_type} found.")
             return
+
+
+        if object_type.lower() == "collaborators":
+            if not self.collaborator.has_perm("crm.manage_collaborators"):
+                capture_message(f"Unauthorized access attempt by collaborator: {self.collaborator.username}"
+                            f" to manage {object_type}.", level="info")
+                self.view_cli.display_error_message(f"You do not have permission to manage {object_type}.")
+                return
+        elif object_type.lower() == "contracts":
+            if not self.collaborator.has_perm("crm.view_contract"):
+                capture_message(f"Unauthorized access attempt by collaborator: {self.collaborator.username}"
+                            f" to manage {object_type}.", level="info")
+
+                self.view_cli.display_error_message(f"You do not have permission to manage {object_type}.")
+                return
+        elif object_type.lower() == "events":
+            if not self.collaborator.has_perm("crm.view_event"):
+                capture_message(f"Unauthorized access attempt by collaborator: {self.collaborator.username}"
+                            f" to manage {object_type}.", level="info")
+
+                self.view_cli.display_error_message(f"You do not have permission to manage {object_type}.")
+                return
 
         if object_type.lower() == "clients":
             self.general_view.display_list(objects, object_type)
