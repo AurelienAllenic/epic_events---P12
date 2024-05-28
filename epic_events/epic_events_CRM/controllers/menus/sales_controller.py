@@ -1,19 +1,13 @@
-from django.db import IntegrityError
 from django.db import DatabaseError
-from django.db.models.query import QuerySet
 from django.core.exceptions import ValidationError
 from typing import List
-from typing import Optional
 from crm.models import Collaborator
-from crm.models import Client
 from crm.models import Contract
-from crm.models import Evenement
 from services.crm_functions import CRMFunctions
 from views.menus.sales_view import SalesView
-from views.menus.management_view import ManagementView
 from views.menus.general_view import GeneralView
-from controllers.menus.management_controller import ManagementController
 from controllers.menus.general_controller import GeneralController
+from sentry_sdk import capture_exception
 
 class SalesController:
 
@@ -47,11 +41,13 @@ class SalesController:
         self.general_view = general_view
 
     def start(self):
+        """
+        Start the main menu for sales role and redirect to another submenu
+        or a function according to his choice
+        """
         print("Starting the sales role...")
-        name_to_display = self.collaborator.get_full_name() or collaborator.username
-
+        name_to_display = self.collaborator.get_full_name() or self.collaborator.username
         self.view_cli.show_main_menu(name_to_display, self.MAIN_MENU_OPTIONS_SALES)
-
         user_choice = self.view_cli.get_user_menu_choice()
 
         match user_choice:
@@ -60,12 +56,16 @@ class SalesController:
                 user_sub_menu_choice = self.view_cli.get_user_menu_choice()
                 match user_sub_menu_choice:
                     case 1:
+                        # Create a client
                         self.general_controller.instance_creation("clients")
                     case 2:
+                        # Update client infos
                         self.general_controller.instance_modification("clients")
                     case 3:
+                        # Update client contract
                         self.process_contract_modification()
                     case 4:
+                        # Return to main menu
                         self.view_cli.show_main_menu(name_to_display, self.MAIN_MENU_OPTIONS_SALES)
                     case _:
                         print(
@@ -75,13 +75,10 @@ class SalesController:
                         self.view_cli.display_error_message("Invalid option selected. Please try again.")
             case 2:
                 self.filter_contracts()
-                pass
             case 3:
                 self.process_event_creation()
-                pass
             case 4:
                 self.general_controller.show_all_objects("Clients")
-                pass
             case 5:
                 self.general_controller.show_all_objects("Contracts")
             case 6:
@@ -105,30 +102,42 @@ class SalesController:
 
 
     def process_contract_modification(self) -> None:
-            print('nous sommes dans process contract modification')
-            contracts = self.get_contracts_assigned_to(self.collaborator.id)
-            print('the contracts are', contracts)
-            if not contracts:
-                return
+        """
+        Process the contract modification by getting
+        the objects and selecting one
+        """
+        print('nous sommes dans process contract modification')
+        contracts = self.get_contracts_assigned_to(self.collaborator.id)
 
-            selected_contract = self.general_controller.select_object_from(contracts)
-            if not selected_contract:
-                return
+        print('the contracts are', contracts)
+        if not contracts:
+            return
 
-            self.services_crm.modify_contract(selected_contract)
+        selected_contract = self.general_controller.select_object_from(contracts)
+        if not selected_contract:
+            return
+
+        self.services_crm.modify_contract(selected_contract)
 
 
     def get_contracts_assigned_to(self, collaborator_id: int, filter_type: str = None) -> List[Contract]:
+        """
+        Get the contracts assigned to the collaborator
+        """
         try:
             print('nous sommes dans le try de get contract assigned to', collaborator_id, filter_type)
+
             contracts = self.services_crm.get_filtered_contracts_for_collaborator(collaborator_id, filter_type)
         except ValueError as e:
+            capture_exception(e)
             self.view_cli.display_error_message(str(e))
             return []
         except DatabaseError:
+            capture_exception(e)
             self.view_cli.display_error_message("I encountered a problem with the database. Please try again later.")
             return []
         except Exception as e:
+            capture_exception(e)
             self.view_cli.display_error_message(str(e))
             return []
 
@@ -139,8 +148,11 @@ class SalesController:
 
 
     def process_event_creation(self) -> None:
+        """
+        create an event by getting the contract assigned to it, attach the contract to the event
+        and finally create the event
+        """
         self.view_cli.clear_screen()
-
         signed_contracts = self.get_contracts_assigned_to(self.collaborator.id, filter_type="signed")
         print('signed contracts', signed_contracts)
         if not signed_contracts:
@@ -154,8 +166,11 @@ class SalesController:
 
 
     def create_event_for_signed_contract(self, signed_contract: Contract) -> None:
+        """
+        Create an event for a signed contract by getting the data for the event
+        and attaching the contract to it
+        """
         self.view_cli.clear_screen()
-
         self.view_cli.display_object_details(signed_contract)
         event_data = self.view_cli.get_data_for_add_new_event()
 
@@ -168,17 +183,24 @@ class SalesController:
             self.view_cli.display_object_details(new_event)
             self.view_cli.display_info_message("Event created successfully.")
         except ValidationError as e:
+            capture_exception(e)
             self.view_cli.display_error_message(f"Validation error: {e}")
         except DatabaseError:
+            capture_exception(e)
             self.view_cli.display_error_message("I encountered a problem with the database. Please try again later.")
         except Exception as e:
+            capture_exception(e)
             self.view_cli.display_error_message(str(e))
 
 
     def filter_contracts(self):
-
+        """
+        Filter the contracts by getting the status
+        from the user and displaying the contracts that match it
+        """
         filter_types = {
-            1: None,  # get all contracts
+
+            1: None,
             2: "no_fully_paid",
             3: "not_signed",
         }
@@ -202,8 +224,13 @@ class SalesController:
 
 
     def process_contract_modification(self) -> None:
+        """
+        Process the contract modification by getting
+        the objects and selecting one
+        """
         contracts = self.get_contracts_assigned_to(self.collaborator.id)
         if not contracts:
+
             return
 
         selected_contract = self.general_controller.select_object_from(contracts, "Contracts")
@@ -214,8 +241,11 @@ class SalesController:
 
 
     def modify_contract(self, contract: Contract) -> None:
+        """
+        Modify the contract by getting the modifications from the user
+        and applying the modifications to the contract
+        """
         self.view_cli.clear_screen()
-
         self.view_cli.display_contract_details(contract)
 
         modifications = self.view_cli.get_data_for_contract_modification()

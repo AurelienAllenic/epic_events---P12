@@ -1,9 +1,8 @@
 import os
 import django
-import json
 import sentry_sdk
 from dotenv import load_dotenv
-
+from controllers.crm_controllers import CRMController
 
 load_dotenv()
 
@@ -21,10 +20,6 @@ def setup_django():
 
 
 setup_django()
-
-from views.crm_views import CRMView # Views
-from services.crm_functions import CRMFunctions # Services
-from controllers.crm_controllers import CRMController # Controllers
 
 
 def main():

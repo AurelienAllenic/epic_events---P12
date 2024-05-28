@@ -1,12 +1,12 @@
-from crm.models import Collaborator, Contract, Client, Evenement
+from crm.models import Collaborator, Evenement
 from services.crm_functions import CRMFunctions
 from views.menus.management_view import ManagementView
-from django.core.exceptions import ValidationError
 from typing import Any, List, Optional
 from django.db import DatabaseError
 from controllers.menus.general_controller import GeneralController
 from views.menus.general_view import GeneralView
-from sentry_sdk import capture_message
+from sentry_sdk import capture_message, capture_exception
+
 
 class ManagementController:
     MAIN_MENU_OPTIONS_MANAGEMENT = [
@@ -54,26 +54,41 @@ class ManagementController:
 
 
     def start(self) -> None:
-        name_to_display = self.collaborator.get_full_name() or collaborator.username
+        """
+        start takes no parameters, 
+        display the main menu for a collaborator with role management
+        and redirect him accordingly
+        """
+        name_to_display = self.collaborator.get_full_name() or self.collaborator.username
+
         self.view_cli.show_menu(name_to_display, self.MAIN_MENU_OPTIONS_MANAGEMENT)
+
         choice = self.view_cli.get_collaborator_choice(limit=len(self.MAIN_MENU_OPTIONS_MANAGEMENT))
 
         match choice:
             case 1:
+                # Manage collaborators
                 self.manage_management_objects("Collaborators")
             case 2:
+                # Manage contracts
                 self.manage_management_objects("Contracts")
             case 3:
+                # Manage events
                 self.manage_management_objects("Events")
             case 4:
+                # Manage support contacts
                 self.modify_support_contact()
             case 5:
+                # Show All Clients
                 self.general_controller.show_all_objects("Clients")
             case 6:
+                # Show All Contracts
                 self.general_controller.show_all_objects("Contracts")
             case 7:
+                # Show All Events
                 self.general_controller.show_all_objects("Events")
             case 8:
+                # Exit the CRM
                 return
             case _:
                 capture_message(
@@ -91,8 +106,12 @@ class ManagementController:
 
 
     def manage_management_objects(self, object_type: str) -> None:
+        """
+        manage_management_objects takes the object_type str as parameter, 
+        check for permissions, and redirect the user either to another menu
+        to choose an option or to a function to match his choice 
+        """
         self.view_cli.clear_screen()
-
         # Check for Permissions according to the object_type
         if object_type.lower() == "collaborators":
             if not self.collaborator.has_perm("crm.manage_collaborators"):
@@ -115,7 +134,7 @@ class ManagementController:
 
                 self.view_cli.display_error_message(f"You do not have permission to manage {object_type}.")
                 return
-
+        # Redirect the user to the appropriate menu or function
         choice = None
         if object_type.lower() == "collaborators" or object_type.lower() == "clients":
             self.view_cli.show_menu(self.collaborator.get_full_name(), self.SUB_MENU_MANAGE_COLLABORATORS_MANAGEMENT)
@@ -130,20 +149,23 @@ class ManagementController:
             print(f"Invalid object type specified : {object_type}.")
             return
         if choice != None:
+            # Menu for both contracts and events, adapting to the object_type
             match choice:
                 case 1:
+                    # Create an instance object corresponding to the object_type
                     self.general_controller.instance_creation(object_type)
                 case 2:
+                    # Update an instance object corresponding to the object_type
                     self.general_controller.instance_modification(object_type)
                 case 3:
+                    # Delete an instance object if the object_type is contracts, else restart the menu
                     if object_type.lower() == "contracts":
                         self.start()
                     else:
                         self.instance_deletion(object_type)
                 case 4:
-                    if(object_type.lower() != "contracts"):
-                        self.start()
-                    return
+                    # Return to the main menu
+                    self.start()
                 case _:
                     capture_message(
                     f"Invalid option : {choice}. in start() - management controller."
@@ -154,10 +176,13 @@ class ManagementController:
         else:
             match choiceEvent:
                 case 1:
+                    # Show events with support contact assigned
                     self.show_events_with_support()
                 case 2:
+                    # Show events without support contact assigned
                     self.show_events_without_support()
                 case 3:
+                    # Return to the main menu
                     self.start()
                 case _:
                     capture_message(
@@ -169,7 +194,13 @@ class ManagementController:
 
 
     def show_events_with_support(self) -> None:
+        """
+        show_events_with_support takes no parameters, 
+        get the events with support contact assigned, 
+        and display them
+        """
         events_to_show = self.get_events_with_optional_filter(support_contact_required=True)
+
 
         if not events_to_show:
             return
@@ -178,7 +209,13 @@ class ManagementController:
 
 
     def show_events_without_support(self) -> None:
+        """
+        show_events_without_support takes no parameters, 
+        get the events without support contact assigned, 
+        and display them
+        """
         events_to_show = self.get_events_with_optional_filter(support_contact_required=False)
+
 
         if not events_to_show:
             return
@@ -187,6 +224,11 @@ class ManagementController:
 
 
     def modify_support_contact(self) -> None:
+        """
+        modify_support_contact takes no parameters, 
+        get the events with support contact assigned, 
+        and display them
+        """
         self.view_cli.clear_screen()
 
         events = self.get_events_with_optional_filter(support_contact_required=None)
@@ -211,15 +253,18 @@ class ManagementController:
                                                                                 selected_support_collaborator)
         print(event_with_new_support_collaborator, "le type de event_with_new_support_collaborator")
         self.view_cli.display_object_details(event_with_new_support_collaborator)
-
-
         self.view_cli.display_info_message(f"The support contact {selected_support_collaborator.get_full_name()}"
                                         f" has been correctly assigned to the event.")
 
 
     def instance_deletion(self, object_type: str) -> None:
+        """
+        instance_deletion takes the object_type str as parameter, 
+        get all the instances of the object_type, 
+        display them, allow user to select one, 
+        and delete it
+        """
         self.view_cli.clear_screen()
-
         our_objects = CRMFunctions.get_all_objects(object_type)
         if not our_objects:
             return
@@ -232,8 +277,15 @@ class ManagementController:
 
 
     def delete_collaborator(self, collaborator: Collaborator) -> None:
+        """
+        delete_collaborator takes the collaborator object as parameter, 
+        display the collaborator details, 
+        ask the user if he wants to delete the collaborator, 
+        and delete it if he confirms
+        """
         self.view_cli.clear_screen()
         self.view_cli.display_item_details(collaborator)
+
         self.view_cli.display_warning_message("Please note that this action is irreversible.")
 
         continue_action = self.view_cli.get_user_confirmation("Do you want to delete the collaborator?")
@@ -245,18 +297,29 @@ class ManagementController:
             self.services_crm.delete_collaborator(collaborator)
             self.view_cli.display_info_message("Collaborator successfully deleted.")
         except DatabaseError:
+            capture_exception(e)
             self.view_cli.display_error_message("A problem occurred with the database. Please try again later.")
         except Exception as e:
+            capture_exception(e)
             self.view_cli.display_error_message(f"An unexpected error occurred: {e}")
 
 
+
     def get_events_with_optional_filter(self, support_contact_required: Optional[bool] = None) -> List[Evenement]:
+        """
+        get_events_with_optional_filter takes the support_contact_required bool as parameter, 
+        get the events with optional filter, 
+        and return them
+        """
         try:
             events = self.services_crm.get_all_events_with_optional_filter(support_contact_required)
+
         except DatabaseError:
+            capture_exception(e)
             self.view_cli.display_error_message("I encountered a problem with the database. Please try again later.")
             return []
         except Exception as e:
+            capture_exception(e)
             self.view_cli.display_error_message(f"{e}")
             return []
 
@@ -267,12 +330,20 @@ class ManagementController:
 
 
     def get_support_collaborators(self) -> List[Collaborator]:
+        """
+        get_support_collaborators takes no parameters, 
+        get the support collaborators, 
+        and return them
+        """
         try:
             support_collaborators = self.services_crm.get_support_collaborators()
+
         except DatabaseError:
+            capture_exception(e)
             self.view_cli.display_error_message("I encountered a problem with the database. Please try again later.")
             return []
         except Exception as e:
+            capture_exception(e)
             self.view_cli.display_error_message(str(e))
             return []
 
@@ -283,12 +354,20 @@ class ManagementController:
 
 
     def add_support_contact_to_event(self, event: Evenement, support_contact: Collaborator) -> Evenement:
+        """
+        add_support_contact_to_event takes the event object and the support_contact object as parameters, 
+        add the support contact to the event, 
+        and return the event with the new support contact for validation
+        """
         try:
             print("event", event, "support_contact", event.client.id)
+
             event_with_new_support_contact = self.services_crm.add_support_contact_to_event(event, support_contact)
             print(event_with_new_support_contact, "event with new support contact")
             return event_with_new_support_contact
         except DatabaseError:
+            capture_exception(e)
             self.view_cli.display_error_message("I encountered a problem with the database. Please try again later.")
         except Exception as e:
+            capture_exception(e)
             self.view_cli.display_error_message(str(e))

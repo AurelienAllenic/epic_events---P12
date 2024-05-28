@@ -17,8 +17,13 @@ from sentry_sdk import capture_message, capture_exception
 class CRMFunctions:
     @staticmethod
     def authenticate_collaborator(username: str, password: str):
+        """
+        Authenticate the collaborator by checking if the username and password are correct
+        and then returning the user if it is
+        """
         user = authenticate(username=username, password=password)
         if user is not None:
+
             return user
         else:
             raise ValidationError("Incorrect username or password")
@@ -26,9 +31,14 @@ class CRMFunctions:
 
     @staticmethod
     def register_collaborator(first_name: str, last_name: str, username: str, password: str, email: str, role_name: str, 
-                            employee_number: str) -> Collaborator :
+                            employee_number: str) -> Collaborator:
+        """
+        Register the collaborator by checking if the username, email and employee number are already in use
+        and then creating the collaborator if they are not
+        """
         try:
             if Collaborator.objects.filter(username=username).exists():
+
                 raise ValidationError(f"The username: {username} is already in use.")
             if Collaborator.objects.filter(email=email).exists():
                 raise ValidationError(f"The email: {email} is already in use.")
@@ -76,6 +86,10 @@ class CRMFunctions:
 
     @staticmethod
     def get_all_objects(object_type: str) -> Optional[List[Any]]:
+        """
+        Get all the objects of the specified type by checking the object
+        type passed as parameter of this function
+        """
         try:
             if object_type.lower() == "collaborators":
                 return Collaborator.objects.all()
@@ -96,7 +110,10 @@ class CRMFunctions:
     @staticmethod
     def select_collaborator_from(self, list_of_collaborators: List[Collaborator],
                                 message: Optional[str] = None) -> Optional[Collaborator]:
-
+        """
+        Select a collaborator from the list of collaborators by displaying it
+        and then returning the selected item by its id
+        """
         self.view_cli.clear_screen()
         self.view_cli.display_collaborators_for_selection(list_of_collaborators)
 
@@ -116,10 +133,13 @@ class CRMFunctions:
 
     @staticmethod
     def modify_item(selected_item: Model, modifications: dict) -> Model:
+        """
+        modify_item takes the selected item and the modifications to apply
+        the modifications to the selected item
+        """
         try:
             for key, value in modifications.items():
                 setattr(selected_item, key, value)
-
             selected_item.full_clean()
             selected_item.save()
             return selected_item
@@ -139,8 +159,13 @@ class CRMFunctions:
 
     @staticmethod
     def modify_collaborator(collaborator: Collaborator, modifications: dict) -> Collaborator:
+        """
+        modify_collaborator takes the collaborator and the modifications to apply
+        the modifications to the collaborator, and also check for role changes
+        """
         if 'username' in modifications and Collaborator.objects.exclude(id=collaborator.id).filter(
                 username=modifications['username']).exists():
+
             raise ValidationError(
                 f"The username: {modifications['username']} is already in use by another collaborator.")
 
@@ -196,8 +221,13 @@ class CRMFunctions:
 
     @staticmethod
     def delete_collaborator(collaborator: Collaborator) -> None:
+        """
+        Delete the collaborator by checking if the collaborator is in use
+        and then deleting the collaborator if it is
+        """
         try:
             collaborator.delete()
+
         except DatabaseError as e:
             capture_exception(e)
             raise DatabaseError(f"Problem with database access") from e
@@ -208,8 +238,13 @@ class CRMFunctions:
     @staticmethod
     def create_contract(client_infos: Client, commercial_contact: Collaborator, value: float,
                         due: float, status: str) -> Contract:
+        """
+        Create a contract by checking if the client infos and the commercial contact are valid
+        and then creating the contract if they are
+        """
         try:
             contract = Contract(
+
                 client_infos=client_infos,
                 commercial_contact=commercial_contact,
                 value=value,
@@ -236,8 +271,13 @@ class CRMFunctions:
 
     @staticmethod
     def modify_contract(contract: Contract, modifications: dict) -> Contract:
+        """
+        Modify the contract by getting the modifications from the user
+        and attaching the modifications to the contract
+        """
         try:
             for key, value in modifications.items():
+
                 setattr(contract, key, value)
 
             contract.full_clean()
@@ -258,6 +298,10 @@ class CRMFunctions:
 
     @staticmethod
     def get_support_collaborators() -> QuerySet[Collaborator]:
+        """
+        Get all the support collaborators by filtering the collaborators by their role
+        which must be support and then returning the support collaborators
+        """
         try:
             support_collaborators = Collaborator.objects.filter(role__name="support")
             return support_collaborators
@@ -271,7 +315,12 @@ class CRMFunctions:
 
     @staticmethod
     def get_all_events_with_optional_filter(support_contact_required: Optional[bool] = None) -> QuerySet[Evenement]:
+        """
+        Get all the events with an optional filter by checking if the support contact
+        and then returning the events accordingly
+        """
         try:
+
             events = Evenement.objects.all()
             match support_contact_required:
                 case None:
@@ -292,8 +341,13 @@ class CRMFunctions:
 
     @staticmethod
     def add_support_contact_to_event(event: Evenement, support_contact: Collaborator) -> Evenement:
+        """
+        Add the support contact to the event by checking if the support contact is already assigned
+        and then assigning the support contact to the event if it is not
+        """
         print('support vcontact final ', support_contact)
         print('event ', event)
+
         print(event.support_contact, 'event support contact')
         try:
             event.support_contact = support_contact
@@ -315,9 +369,13 @@ class CRMFunctions:
                         phone: str,
                         company_name: str,
                         commercial_contact: Collaborator) -> Client:
-
+        """
+        Create a client by checking if the email is already in use
+        and then creating the client if it is not
+        """
         if Client.objects.filter(email=email).exists():
             raise ValidationError(f"The {email} is already in use.")
+
 
         try:
             new_client = Client(
@@ -345,8 +403,13 @@ class CRMFunctions:
 
     @staticmethod
     def modify_client(client: Client, modifications: dict) -> Client:
+        """
+        Modify the client by getting the modifications from the user
+        and attaching the modifications to the client
+        """
         try:
             for key, value in modifications.items():
+
                 setattr(client, key, value)
                 client.full_clean()
                 client.save()
@@ -364,8 +427,13 @@ class CRMFunctions:
 
 
     def get_filtered_contracts_for_collaborator(self, collaborator_id: int, filter_type: str = None) -> QuerySet[Contract]:
+        """
+        Get the filtered contracts for the collaborator by checking if the filter type is None
+        and then returning all the contracts if it is
+        """
         try:
             # Récupérer les clients associés au collaborateur
+
             clients = self.get_clients_for_collaborator(collaborator_id)
             print('clients', clients)
             
@@ -421,8 +489,13 @@ class CRMFunctions:
 
     @staticmethod
     def get_clients_for_collaborator(collaborator_id: int) -> QuerySet[Evenement]:
+        """
+        Get all the clients for the collaborator by checking if the commercial contact
+        is already assigned and then returning the clients accordingly
+        """
         try:
             clients_of_collaborator = Client.objects.filter(commercial_contact_id=collaborator_id)
+
             return clients_of_collaborator
         except DatabaseError as e:
             capture_exception(e)
@@ -443,8 +516,13 @@ class CRMFunctions:
                     location: str,
                     attendees: int,
                     notes: str) -> Evenement:
+        """
+        Create an event by checking if the client and the support contact exist
+        and then creating the event if they do
+        """
         try:
             client = Client.objects.get(name=client_name)
+
         except Client.DoesNotExist:
             raise ValueError(f"Client '{client_name}' not found")
 
@@ -482,8 +560,13 @@ class CRMFunctions:
 
     @staticmethod
     def get_events_for_collaborator(collaborator_id: int) -> QuerySet[Evenement]:
+        """
+        Get all the events for the collaborator by checking if the support contact
+        is already assigned and then returning the events accordingly
+        """
         print("Collaborator ID:", collaborator_id)
         try:
+
             print("Dans le try")
             return Evenement.objects.filter(support_contact_id=collaborator_id)
         except DatabaseError as e:
