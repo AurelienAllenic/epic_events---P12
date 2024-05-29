@@ -301,7 +301,6 @@ class ManagementController:
             self.view_cli.display_error_message(f"An unexpected error occurred: {e}")
 
 
-
     def get_events_with_optional_filter(self, support_contact_required: Optional[bool] = None) -> List[Evenement]:
         """
         get_events_with_optional_filter takes the support_contact_required bool as parameter, 

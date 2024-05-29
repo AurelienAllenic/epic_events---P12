@@ -31,7 +31,7 @@ for group_name in group_names:
 permissions = {
     'management_team': ['view_client', 'manage_collaborators', 'manage_contracts_creation_modification',
                         'view_contract', 'view_event'],
-    'sales_team': ['add_client', 'view_client', 'view_contract', 'view_event'],
+    'sales_team': ['add_client', 'add_event', 'view_client', 'view_contract', 'view_event'],
     'support_team': ['view_client', 'view_contract', 'view_event'],
 }
 

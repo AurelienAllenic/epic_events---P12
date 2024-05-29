@@ -64,7 +64,7 @@ class SalesController:
                         self.general_controller.instance_modification("clients")
                     case 3:
                         # Update client contract
-                        self.process_contract_modification()
+                        self.general_controller.instance_modification("contracts")
                     case 4:
                         # Return to main menu
                         self.view_cli.show_main_menu(name_to_display, self.MAIN_MENU_OPTIONS_SALES)
@@ -77,7 +77,7 @@ class SalesController:
             case 2:
                 self.filter_contracts()
             case 3:
-                self.process_event_creation()
+                self.general_controller.instance_creation("events")
             case 4:
                 self.general_controller.show_all_objects("Clients")
             case 5:
@@ -102,59 +102,13 @@ class SalesController:
         self.start()
 
 
-    def process_contract_modification(self) -> None:
-        """
-        Process the contract modification by getting
-        the objects and selecting one
-        """
-        print('nous sommes dans process contract modification')
-        contracts = self.get_contracts_assigned_to(self.collaborator.id)
-
-        print('the contracts are', contracts)
-        if not contracts:
-            return
-
-        selected_contract = self.general_controller.select_object_from(contracts)
-        if not selected_contract:
-            return
-
-        self.services_crm.modify_contract(selected_contract)
-
-
-    def get_contracts_assigned_to(self, collaborator_id: int, filter_type: str = None) -> List[Contract]:
-        """
-        Get the contracts assigned to the collaborator
-        """
-        try:
-            print('nous sommes dans le try de get contract assigned to', collaborator_id, filter_type)
-
-            contracts = self.services_crm.get_filtered_contracts_for_collaborator(collaborator_id, filter_type)
-        except ValueError as e:
-            capture_exception(e)
-            self.view_cli.display_error_message(str(e))
-            return []
-        except DatabaseError:
-            capture_exception(e)
-            self.view_cli.display_error_message("I encountered a problem with the database. Please try again later.")
-            return []
-        except Exception as e:
-            capture_exception(e)
-            self.view_cli.display_error_message(str(e))
-            return []
-
-        if not contracts:
-            self.view_cli.display_info_message("There are no contracts to display")
-
-        return contracts
-
-
     def process_event_creation(self) -> None:
         """
         create an event by getting the contract assigned to it, attach the contract to the event
         and finally create the event
         """
         self.view_cli.clear_screen()
-        signed_contracts = self.get_contracts_assigned_to(self.collaborator.id, filter_type="signed")
+        signed_contracts = self.general_controller.get_contracts_assigned_to(self.collaborator.id, filter_type="signed")
         print('signed contracts', signed_contracts)
         if not signed_contracts:
             return
@@ -164,34 +118,6 @@ class SalesController:
             return
 
         self.create_event_for_signed_contract(selected_contract)
-
-
-    def create_event_for_signed_contract(self, signed_contract: Contract) -> None:
-        """
-        Create an event for a signed contract by getting the data for the event
-        and attaching the contract to it
-        """
-        self.view_cli.clear_screen()
-        self.view_cli.display_object_details(signed_contract)
-        event_data = self.view_cli.get_data_for_add_new_event()
-
-        event_data["contract"] = signed_contract
-
-        try:
-            print('event data', event_data)
-            new_event = self.services_crm.create_event(**event_data)
-            print('new event', new_event)
-            self.view_cli.display_object_details(new_event)
-            self.view_cli.display_info_message("Event created successfully.")
-        except ValidationError as e:
-            capture_exception(e)
-            self.view_cli.display_error_message(f"Validation error: {e}")
-        except DatabaseError:
-            capture_exception(e)
-            self.view_cli.display_error_message("I encountered a problem with the database. Please try again later.")
-        except Exception as e:
-            capture_exception(e)
-            self.view_cli.display_error_message(str(e))
 
 
     def filter_contracts(self):
@@ -215,40 +141,11 @@ class SalesController:
 
         filter_type = filter_types[choice]
 
-        contracts_to_display = self.get_contracts_assigned_to(self.collaborator.id, filter_type)
+        contracts_to_display = self.general_controller.get_contracts_assigned_to(self.collaborator.id, filter_type)
 
         if not contracts_to_display:
+
             print("no contracts to display")
             return
 
         self.view_cli.display_list(contracts_to_display, "Contracts")
-
-
-    def modify_contract(self, contract: Contract) -> None:
-        """
-        Modify the contract by getting the modifications from the user
-        and applying the modifications to the contract
-        """
-        self.view_cli.clear_screen()
-        self.view_cli.display_contract_details(contract)
-
-        modifications = self.view_cli.get_data_for_contract_modification()
-
-        if not modifications:
-            self.view_cli.display_info_message("No modifications were made.")
-            return
-
-        try:
-            contract_modified = self.services_crm.modify_contract(contract, modifications)
-            self.view_cli.clear_screen()
-
-            self.view_cli.display_contract_details(contract_modified)
-
-            self.view_cli.display_info_message("The contract has been modified successfully.")
-            return
-        except ValidationError as e:
-            self.view_cli.display_error_message(str(e))
-        except DatabaseError:
-            self.view_cli.display_error_message("I encountered a problem with the database. Please try again later.")
-        except Exception as e:
-            self.view_cli.display_error_message(str(e))

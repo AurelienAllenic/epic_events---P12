@@ -28,6 +28,12 @@ class GeneralController:
                                 f" to manage {object_type}.", level="info")
                     self.general_view.display_error_message(f"You do not have permission to manage {object_type}.")
                     return
+            if object_type.lower() == "collaborators":
+                if not self.collaborator.has_perm("crm.manage_collaborators"):
+                    capture_message(f"Unauthorized access attempt by collaborator: {self.collaborator.username}"
+                                f" to manage {object_type}.", level="info")
+                    self.general_view.display_error_message(f"You do not have permission to manage {object_type}.")
+                    return
             elif object_type.lower() == "contracts":
                 if not self.collaborator.has_perm("crm.manage_contracts_creation_modification"):
                     capture_message(f"Unauthorized access attempt by collaborator: {self.collaborator.username}"
@@ -35,11 +41,19 @@ class GeneralController:
                     self.general_view.display_error_message(f"You do not have permission to manage {object_type}.")
                     return
             elif object_type.lower() == "events":
-                if not self.collaborator.has_perm("crm.view_event"):
+                permissions = self.collaborator.get_all_permissions()
+
+                print("Permissions de l'utilisateur :")
+
+                for perm in permissions:
+                    print(perm)
+
+                print("our object type", object_type)
+                if not self.collaborator.has_perm("crm.add_event"):
                     capture_message(f"Unauthorized access attempt by collaborator: {self.collaborator.username}"
                                     f" to manage {object_type}.", level="info")
-                self.general_view.display_error_message(f"You do not have permission to manage {object_type}.")
-                return
+                    self.general_view.display_error_message(f"You do not have permission to manage {object_type}.")
+                    return
             # Check for the kind of object to create
             if object_type.lower() == "collaborators":
                 while True:
@@ -80,12 +94,79 @@ class GeneralController:
                     print("client data :", client_data)
                     client = self.services_crm.create_client(**client_data)
                     self.general_view.clear_screen()
+                    self.general_view.display_item_details(client)
                     self.general_view.display_info_message("Client created successfully!")
                 except Exception as e:
                     self.general_view.display_error_message(str(e))
+            elif object_type.lower() == "events":
+                self.general_view.clear_screen()
+                signed_contracts = self.get_contracts_assigned_to(self.collaborator.id, filter_type="signed")
+                print('signed contracts', signed_contracts)
+                if not signed_contracts:
+                    return
+
+                selected_contract = self.select_object_from(signed_contracts, "Events")
+                if not selected_contract:
+                    return
+
+                self.create_event_for_signed_contract(selected_contract)
             else:
                 print("Invalid object type specified.")
                 return
+
+
+    def get_contracts_assigned_to(self, collaborator_id: int, filter_type: str = None) -> List[Contract]:
+        """
+        Get the contracts assigned to the collaborator
+        """
+        try:
+            print('nous sommes dans le try de get contract assigned to', collaborator_id, filter_type)
+
+            contracts = self.services_crm.get_filtered_contracts_for_collaborator(collaborator_id, filter_type)
+        except ValueError as e:
+            capture_exception(e)
+            self.general_view.display_error_message(str(e))
+            return []
+        except DatabaseError:
+            capture_exception(e)
+            self.general_view.display_error_message("I encountered a problem with the database. Please try again later.")
+            return []
+        except Exception as e:
+            capture_exception(e)
+            self.general_view.display_error_message(str(e))
+            return []
+
+        if not contracts:
+            self.general_view.display_info_message("There are no contracts to display")
+        return contracts
+
+
+    def create_event_for_signed_contract(self, signed_contract: Contract) -> None:
+        """
+        Create an event for a signed contract by getting the data for the event
+        and attaching the contract to it
+        """
+        self.general_view.clear_screen()
+        self.general_view.display_object_details(signed_contract)
+        event_data = self.general_view.get_data_for_add_new_event()
+
+        event_data["contract"] = signed_contract
+
+        try:
+            print('event data', event_data)
+            new_event = self.services_crm.create_event(**event_data)
+            print('new event', new_event)
+            self.general_view.display_object_details(new_event)
+            self.general_view.display_info_message("Event created successfully.")
+        except ValidationError as e:
+            capture_exception(e)
+            self.general_view.display_error_message(f"Validation error: {e}")
+        except DatabaseError:
+            capture_exception(e)
+            self.general_view.display_error_message("I encountered a problem with the database. Please try again later.")
+        except Exception as e:
+            capture_exception(e)
+            self.general_view.display_error_message(str(e))
 
 
     def select_object_from(self, list_of_objects: List[Any], object_type: str, message: Optional[str] = None) -> Optional[Any]:
@@ -134,7 +215,7 @@ class GeneralController:
             # Create the contract using CRM service
             new_contract = self.services_crm.create_contract(**data_contract)
             self.general_view.display_info_message("Contract created successfully.")
-            self.general_view.display_object_details(new_contract)
+            self.general_view.display_item_details(new_contract)
 
         except ValidationError as e:
             capture_exception(e)
@@ -268,6 +349,34 @@ class GeneralController:
                 self.general_view.display_error_message("I encountered a problem with the database. Please try again later.")
             except Exception as e:
                 self.general_view.display_error_message(str(e))
+        elif isinstance(selected_item, Contract):
+            self.general_view.clear_screen()
+            self.general_view.display_contract_details(selected_item)
+
+            modifications = self.general_view.get_data_for_contract_modification()
+
+            if not modifications:
+
+                self.general_view.display_info_message("No modifications were made.")
+                return
+
+            try:
+                contract_modified = self.services_crm.modify_contract(selected_item, modifications)
+                self.general_view.clear_screen()
+
+                self.general_view.display_item_details(contract_modified)
+
+                self.general_view.display_info_message("The contract has been modified successfully.")
+                return
+            except ValidationError as e:
+                capture_exception(e)
+                self.general_view.display_error_message(str(e))
+            except DatabaseError:
+                capture_exception(e)
+                self.general_view.display_error_message("I encountered a problem with the database. Please try again later.")
+            except Exception as e:
+                capture_exception(e)
+                self.general_view.display_error_message(str(e))
         else:
             print("Unsupported item type for modification:", type(selected_item))
 
@@ -334,4 +443,3 @@ class GeneralController:
             self.general_view.display_list(objects, "contracts")
         elif object_type.lower() == "events":
             self.general_view.display_list(objects, object_type)
-
