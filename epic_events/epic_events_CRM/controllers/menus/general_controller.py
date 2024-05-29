@@ -151,7 +151,6 @@ class GeneralController:
             self.general_view.display_error_message(f"An unexpected error occurred: {e}")
 
 
-
     def instance_modification(self, object_type: str) -> None:
         """
         instance_modification takes the object_type str as parameter, 
@@ -312,21 +311,21 @@ class GeneralController:
             if not self.collaborator.has_perm("crm.manage_collaborators"):
                 capture_message(f"Unauthorized access attempt by collaborator: {self.collaborator.username}"
                             f" to manage {object_type}.", level="info")
-                self.view_cli.display_error_message(f"You do not have permission to manage {object_type}.")
+                self.general_view.display_error_message(f"You do not have permission to manage {object_type}.")
                 return
         elif object_type.lower() == "contracts":
             if not self.collaborator.has_perm("crm.view_contract"):
                 capture_message(f"Unauthorized access attempt by collaborator: {self.collaborator.username}"
                             f" to manage {object_type}.", level="info")
 
-                self.view_cli.display_error_message(f"You do not have permission to manage {object_type}.")
+                self.general_view.display_error_message(f"You do not have permission to manage {object_type}.")
                 return
         elif object_type.lower() == "events":
             if not self.collaborator.has_perm("crm.view_event"):
                 capture_message(f"Unauthorized access attempt by collaborator: {self.collaborator.username}"
                             f" to manage {object_type}.", level="info")
 
-                self.view_cli.display_error_message(f"You do not have permission to manage {object_type}.")
+                self.general_view.display_error_message(f"You do not have permission to manage {object_type}.")
                 return
 
         if object_type.lower() == "clients":
@@ -336,29 +335,3 @@ class GeneralController:
         elif object_type.lower() == "events":
             self.general_view.display_list(objects, object_type)
 
-
-    def select_object_from(self, list_of_objects: List[Any], object_type: str, message: Optional[str] = None) -> Optional[Any]:
-        """
-        select_object_from takes the list_of_objects, the object_type and a message as parameters, 
-        call a function to display the objects from the list, prompt for id via another function 
-        and return a list of objects matching the id prompted
-        """
-        print('on rentre dans la fonction select object from')
-        self.general_view.clear_screen()
-
-        print('list of objects', list_of_objects)
-        self.general_view.display_objects_for_selection(list_of_objects)
-
-        if message:
-            self.general_view.display_info_message(message)
-
-        objects_ids = [obj.id for obj in list_of_objects]
-        print('object type dans select object from', object_type)
-        selected_object_id = self.general_view.prompt_for_selection_by_id(objects_ids, object_type)
-        print('la selection est', selected_object_id)
-        selected_object = next((obj for obj in list_of_objects if obj.id == selected_object_id), None)
-
-        if not selected_object:
-            self.general_view.display_error_message(f"We couldn't find the {object_type}. Please try again later.")
-        print(f"Selected object: {selected_object}")
-        return selected_object

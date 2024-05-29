@@ -119,8 +119,6 @@ class ManagementController:
                             f" to manage {object_type}.", level="info")
                 self.view_cli.display_error_message(f"You do not have permission to manage {object_type}.")
                 return
-            user_perms = self.collaborator.user_permissions
-            print("Permissions de l'utilisateur :", user_perms)
         elif object_type.lower() == "contracts":
             if not self.collaborator.has_perm("crm.manage_contracts_creation_modification"):
                 capture_message(f"Unauthorized access attempt by collaborator: {self.collaborator.username}"
@@ -131,7 +129,6 @@ class ManagementController:
             if not self.collaborator.has_perm("crm.view_event"):
                 capture_message(f"Unauthorized access attempt by collaborator: {self.collaborator.username}"
                             f" to manage {object_type}.", level="info")
-
                 self.view_cli.display_error_message(f"You do not have permission to manage {object_type}.")
                 return
         # Redirect the user to the appropriate menu or function

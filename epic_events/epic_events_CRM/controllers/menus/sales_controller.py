@@ -9,8 +9,8 @@ from views.menus.general_view import GeneralView
 from controllers.menus.general_controller import GeneralController
 from sentry_sdk import capture_exception
 
-class SalesController:
 
+class SalesController:
     MAIN_MENU_OPTIONS_SALES = [
     "1 - Manipulate Clients data in the CRM system.",
     "2 - Filter Contracts.",
@@ -28,6 +28,7 @@ class SalesController:
         "4 - Return to main menu."
     ]
 
+
     def __init__(self, collaborator: Collaborator,
                 services_crm: CRMFunctions,
                 view_cli: SalesView,
@@ -40,6 +41,7 @@ class SalesController:
         self.general_controller = general_controller
         self.general_view = general_view
 
+
     def start(self):
         """
         Start the main menu for sales role and redirect to another submenu
@@ -49,7 +51,6 @@ class SalesController:
         name_to_display = self.collaborator.get_full_name() or self.collaborator.username
         self.view_cli.show_main_menu(name_to_display, self.MAIN_MENU_OPTIONS_SALES)
         user_choice = self.view_cli.get_user_menu_choice()
-
         match user_choice:
             case 1:
                 self.view_cli.show_main_menu(name_to_display, self.SUB_MENU_CLIENT_SALES)
@@ -221,23 +222,6 @@ class SalesController:
             return
 
         self.view_cli.display_list(contracts_to_display, "Contracts")
-
-
-    def process_contract_modification(self) -> None:
-        """
-        Process the contract modification by getting
-        the objects and selecting one
-        """
-        contracts = self.get_contracts_assigned_to(self.collaborator.id)
-        if not contracts:
-
-            return
-
-        selected_contract = self.general_controller.select_object_from(contracts, "Contracts")
-        if not selected_contract:
-            return
-
-        self.modify_contract(selected_contract)
 
 
     def modify_contract(self, contract: Contract) -> None:
