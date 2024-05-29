@@ -12,6 +12,7 @@ from controllers.menus.general_controller import GeneralController
 from controllers.menus.support_controller import SupportController
 from views.menus.support_view import SupportView
 
+
 class CRMController:
     def __init__(self):
         self.crm_services = CRMFunctions()
@@ -19,8 +20,13 @@ class CRMController:
 
 
     def authenticate_collaborator(self) -> Optional[Collaborator]:
+        """
+        Authenticate the collaborator by prompting the user for their username and password
+        and then authenticating the user
+        """
         login_data = self.view_cli.prompt_login()
         try:
+
             user = self.crm_services.authenticate_collaborator(**login_data)
             self.view_cli.display_info_message("Logged in successfully!")
             return user
@@ -30,6 +36,10 @@ class CRMController:
 
 
     def start(self):
+        """
+        Start the application by authenticating the collaborator
+        and then displaying the main menu corresponding to its role
+        """
         collaborator = self.authenticate_collaborator()
 
         if collaborator is None:

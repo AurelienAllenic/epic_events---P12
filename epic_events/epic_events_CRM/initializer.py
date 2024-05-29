@@ -31,7 +31,7 @@ for group_name in group_names:
 permissions = {
     'management_team': ['view_client', 'manage_collaborators', 'manage_contracts_creation_modification',
                         'view_contract', 'view_event'],
-    'sales_team': ['add_client', 'view_client', 'view_contract', 'view_event'],
+    'sales_team': ['add_client', 'add_event', 'view_client', 'view_contract', 'view_event'],
     'support_team': ['view_client', 'view_contract', 'view_event'],
 }
 
@@ -44,8 +44,12 @@ for group_name, perm_codenames in permissions.items():
 
 
 def create_collaborator(first_name, last_name, username, email, role_name, employee_number, password, group_name):
+    """
+    Create a collaborator and add him to a group depending on its role
+    """
     role, created = Role.objects.get_or_create(name=role_name)
     if created:
+
         print(f"Role '{role_name}' created successfully.")
     else:
         print(f"The role '{role_name}' already existed.")
@@ -76,6 +80,9 @@ create_collaborator("Emma", "Stone", "support", "emma.stone@example.net",
 
 
 def find_sales_contact(username):
+    """
+    Find a sales contact by his username
+    """
     try:
         return Collaborator.objects.get(username=username)
     except Collaborator.DoesNotExist:
@@ -84,6 +91,9 @@ def find_sales_contact(username):
 
 
 def create_client(name, email, phone, company_name, commercial_contact):
+    """
+    Create a client and add him to a group depending on its role
+    """
     sales_contact = find_sales_contact(commercial_contact)
     if sales_contact is None:
         return
@@ -139,8 +149,12 @@ for data in contracts_data:
 
 
 def create_event(name, client_name, client_contact, day_start, date_end, support_contact_username, location, attendees, notes, contract):
+    """
+    Create an event and add it to a group depending on its role
+    """
     try:
         client = Client.objects.get(name=client_name)
+
     except Client.DoesNotExist:
         print(f"Client '{client_name}' not found.")
         return

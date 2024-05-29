@@ -13,8 +13,13 @@ from crm.models import Contract, Client, Evenement, Collaborator
 class BaseView:
 
     def ask_user_if_continue(self) -> bool:
+        """
+        Ask the user if they want to perform another operation
+        and then return the response
+        """
         while True:
             response = click.prompt("Do you want to perform another operation? (yes/no)", type=str).lower()
+
             if response == "yes":
                 return True
             elif response == "no":
@@ -23,7 +28,11 @@ class BaseView:
                 self.display_error_message("Invalid response. Please enter 'yes' or 'no'.")
 
     def get_user_confirmation(self, question: str) -> bool:
+        """
+        Ask the user for confirmation and return the response
+        """
         while True:
+
             response = click.prompt(f"{question} (yes/no)", type=str).lower()
             if response == "yes":
                 return True
@@ -33,16 +42,24 @@ class BaseView:
                 self.display_error_message("Invalid response. Please enter 'yes' or 'no'.")
 
     def get_collaborator_choice(self, limit: int) -> int:
+        """
+        Ask the user for a choice and return the choice
+        """
         while True:
             choice = click.prompt("Please choose an option", type=int)
+
             if 1 <= choice <= limit:
                 return choice
             else:
                 self.display_error_message("Invalid option. Please try again.")
 
     def prompt_for_selection_by_id(self, ids: List[int], model_name: str) -> int:
-    # Ask the user to choose an ID
+        """
+        Ask the user to choose an ID and return the ID
+        """
+        # Ask the user to choose an ID
         print('on est dans la fonction prompt_for_selection_by_id')
+
         while True:
             selected_id = click.prompt(f"Please enter the ID of the {model_name} you wish to select.", type=int)
             print("Selected ID:", selected_id)
@@ -59,32 +76,51 @@ class BaseView:
 
     @staticmethod
     def display_error_message(error_message: str) -> None:
-
+        """
+        Display an error message
+        """
         console = Console()
         error_text = Text(error_message, style="bold red")
+
         console.print(error_text)
 
     @staticmethod
     def display_info_message(info_message: str) -> None:
+        """
+        Display an info message
+        """
         console = Console()
         info_text = Text(info_message, style="bold green")
+
         console.print(info_text)
 
     @staticmethod
     def display_message(message: str) -> None:
+        """
+        Display a message
+        """
         console = Console()
         message_text = Text(message, style="bold magenta")
+
         console.print(message_text)
 
     @staticmethod
     def display_warning_message(message: str) -> None:
+        """
+        Display a warning message
+        """
         console = Console()
         message_text = Text(message, style="bold yellow")
+
         console.print(message_text)
 
     def display_list(self, objects: List, object_type: str) -> None:
+        """
+        Display a list of objects according to the object_type str passed as parameter
+        """
         console = Console()
         table = Table(title=f"List of all {object_type}", show_header=True, header_style="bold magenta", expand=True)
+
         print('object_type', object_type)
         # Create columns based on object type
         if object_type.lower() == "events":
@@ -157,6 +193,9 @@ class BaseView:
     # ==========================  Management Controller    ===============================
 
     def show_menu(self, collaborator_name: str, menu_options: List[str]) -> None:
+        """
+        Display a menu for the user to choose an option by displaying the list menu_options passed as parameter
+        """
         self.clear_screen()
         console = Console()
 
@@ -175,9 +214,12 @@ class BaseView:
         console.print(table)
 
     def get_valid_input_with_limit(self, prompt_text: str, max_length: int, allow_blank: bool = False) -> str:
-
+        """
+        Get a valid input from the user within the specified limit or allow blank input
+        """
         # Loop to ensure valid input within the specified limit or allow blank input.
         while True:
+
             # Prompts the user for input.
             user_input = click.prompt(prompt_text, type=str, default="", show_default=False).strip()
 
@@ -199,8 +241,12 @@ class BaseView:
             return user_input
 
     def get_valid_email(self, allow_blank: bool = False) -> str:
+        """
+        Get a valid email from the user by using regex
+        """
         email_regex = r'\b[A-Z|a-z|0-9|._%+-]+@[A-Z|a-z|0-9|.-]+\.[A-Z|a-z]{2,}\b'
         while True:
+
             email = click.prompt("Email", type=str, default="", show_default=False).strip()
 
             # Check if input is blank and allow_blank is True
@@ -220,8 +266,12 @@ class BaseView:
             return email
 
     def get_valid_decimal_input(self, prompt_text: str, allow_blank: bool = False) -> Optional[float]:
+        """
+        Get a valid decimal input from the user
+        """
         while True:
             user_input = click.prompt(prompt_text, default="", show_default=False).strip()
+
 
             # Check if input is blank and allow_blank is True
             if allow_blank and user_input == "":
@@ -247,8 +297,12 @@ class BaseView:
     def get_valid_choice(self, prompt_text: str,
                          choices: List[str],
                          allow_blank: bool = False) -> Optional[str]:
+        """
+        Get a valid choice from the user by checking if the choice is in the list of choices
+        """
         while True:
             choice = click.prompt(prompt_text, default="", show_default=False).strip().lower()
+
 
             # Check if input is blank and allow_blank is True
             if allow_blank and choice == "":
@@ -269,9 +323,12 @@ class BaseView:
     # ==========================  Sales Controller    ===============================
 
     def display_clients_for_selection(self, clients: List[Client]) -> None:
-
+        """
+        Display a list of clients for selection
+        """
         self.clear_screen()
         # Create console instance
+
         console = Console()
 
         # Create table
@@ -292,8 +349,12 @@ class BaseView:
         console.print(table)
 
     def display_contracts_for_selection(self, contracts: List[Contract]) -> None:
+        """
+        Display a list of contracts for selection
+        """
         self.clear_screen()
         # Create console instance
+
         console = Console()
 
         # Create table
@@ -321,8 +382,11 @@ class BaseView:
 
     @staticmethod
     def display_events_for_selection(events: List[Evenement]) -> None:
-
+        """
+        Display a list of events for selection
+        """
         console = Console()
+
 
         # Create table
         table = Table(title="List of Available Events", show_header=True, header_style="bold magenta", expand=True)
@@ -347,13 +411,15 @@ class BaseView:
 
     @staticmethod
     def display_object_details(obj: Any) -> None:
+        """
+        Display the details of an object
+        """
         console = Console()
         if isinstance(obj, Evenement):
             table_title = "Event Detail"
             table = Table(title=table_title, show_header=True, header_style="bold blue", show_lines=True)
             table.add_column("Field", style="dim", width=20)
             table.add_column("Value", width=40)
-
             table.add_row("Event ID", str(obj.id))
             table.add_row("Name", obj.name)
             table.add_row("Client Name", obj.client_name)
@@ -364,14 +430,12 @@ class BaseView:
             table.add_row("Attendees", str(obj.attendees))
             table.add_row("Support Contact", obj.support_contact.get_full_name() if obj.support_contact else "N/A")
             table.add_row("Notes", obj.notes or "N/A")
-
             console.print(table, justify="center")
         elif isinstance(obj, Contract):
             table_title = "Contract Detail"
             table = Table(title=table_title, show_header=True, header_style="bold blue", show_lines=True)
             table.add_column("Field", style="dim", width=20)
             table.add_column("Value", width=40)
-
             table.add_row("Contract ID", str(obj.id))
             table.add_row("Client Information", obj.client_infos.name + " - " + obj.client_infos.email)
             table.add_row("Commercial Contact", obj.commercial_contact.get_full_name() if obj.commercial_contact else "N/A")
@@ -379,21 +443,18 @@ class BaseView:
             table.add_row("Amount Remaining", str(obj.due))
             table.add_row("Creation Date", obj.creation_date.strftime("%Y-%m-%d"))
             table.add_row("Status", "Signed" if obj.status == "signed" else "Not Signed")
-
             console.print(table, justify="center")
         elif isinstance(obj, Client):
             table_title = "Client Detail"
             table = Table(title=table_title, show_header=True, header_style="bold blue", show_lines=True)
             table.add_column("Field", style="dim", width=20)
             table.add_column("Value", width=40)
-
             table.add_row("Client ID", str(obj.id))
             table.add_row("Name", obj.name)
             table.add_row("Email", obj.email)
             table.add_row("Phone", obj.phone)
             table.add_row("Company Name", obj.company_name)
             table.add_row("Commercial Contact", obj.commercial_contact.get_full_name() if obj.commercial_contact else "N/A")
-
             console.print(table, justify="center")
         else:
             console.print("Unsupported object type")
@@ -401,7 +462,11 @@ class BaseView:
 
     @staticmethod
     def display_objects_for_selection(objects: List[Union[Client, Contract, Evenement]]) -> None:
+        """
+        Display a list of objects for selection
+        """
         console = Console()
+
 
         # Vérification des types d'objets dans la liste
         has_evenement = any(isinstance(obj, Evenement) for obj in objects)
@@ -444,8 +509,12 @@ class BaseView:
 
 
     def get_contract_filter_choices(self) -> int:
+        """
+        Display a menu for the user to choose an option
+        """
         self.clear_screen()
         console = Console()
+
 
         filter_options = [
             "1 - View all contracts of your clients.",

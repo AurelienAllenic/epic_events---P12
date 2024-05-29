@@ -17,6 +17,7 @@ from django.db import DatabaseError
 
 class GeneralView(BaseView):
 
+
     def __init__(self):
         super().__init__()
 
@@ -155,7 +156,6 @@ class GeneralView(BaseView):
         return modification_data
 
 
-
     def get_data_for_modify_contract(self) -> dict:
         modification_data = {}
         self.display_info_message("Modifying contract... "
@@ -176,7 +176,6 @@ class GeneralView(BaseView):
         return modification_data
 
 
-    
     def display_item_details(self, item: Any) -> None:
         self.clear_screen()
         console = Console()
@@ -371,3 +370,46 @@ class GeneralView(BaseView):
             raise DatabaseError("Problem with database access while modifying the event.") from e
         except Exception as e:
             raise Exception(f"Unexpected error occurred while modifying the event: {e}")
+
+
+    def get_data_for_add_new_event(self) -> dict:
+        self.display_info_message("Please provide the following information for the new event")
+
+        client_name = self.get_valid_input_with_limit("Client Name", 100)
+        name = self.get_valid_input_with_limit("Name", 255)
+        client_contact = self.get_valid_input_with_limit("Client Contact", 1000)
+        support_contact = self.get_valid_input_with_limit("support Contact", 1000)
+        day_start = self.get_valid_start_date()
+        date_end = self.get_valid_end_date(day_start)
+        location = self.get_valid_input_with_limit("Location", 300)
+        attendees = self.get_valid_input_positive_integer("Attendees")
+        notes = click.prompt("Notes (optional)", default="", show_default=False).strip()
+
+        event_data = {
+            "client_name": client_name,
+            "name": name,
+            "client_contact": client_contact,
+            "support_contact": support_contact,
+            "day_start": day_start,
+            "date_end": date_end,
+            "location": location,
+            "attendees": attendees,
+            "notes": notes
+        }
+        return event_data
+
+
+    def get_valid_input_positive_integer(self, prompt_text: str) -> int:
+            while True:
+                user_input_str = click.prompt(prompt_text, default="", show_default=False)
+                try:
+                    user_input_int = int(user_input_str)
+                except ValueError:
+                    self.display_error_message("Please enter a valid integer.")
+                    continue
+
+                if user_input_int <= 0:
+                    self.display_error_message("The number must be greater than zero. Please try again.")
+                    continue
+
+                return user_input_int

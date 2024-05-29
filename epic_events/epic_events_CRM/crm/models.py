@@ -4,6 +4,9 @@ from django.conf import settings
 
 
 class Client(models.Model):
+    """
+    Model for a client with a link to a commercial contact
+    """
     name = models.CharField(max_length=100)
     email = models.EmailField()
     phone = models.CharField(max_length=20)
@@ -17,7 +20,11 @@ class Client(models.Model):
 
 
 class Contract(models.Model):
+    """
+    Model for a contract with a link to a client and a commercial_contact
+    """
     STATUS_CHOICES = [
+
         ('signed', 'Signed'),
         ('not_signed', 'Not Signed')
     ]
@@ -39,6 +46,10 @@ class Contract(models.Model):
 
 
 class Evenement(models.Model):
+    """
+    Model for an event with a link to a contract, a client,
+    a commercial_contact and a support_contact
+    """
     contract = models.ForeignKey(Contract, on_delete=models.CASCADE, null=True)
     name = models.CharField(max_length = 255, null = True)
     client = models.ForeignKey(Client, on_delete=models.CASCADE)
@@ -56,6 +67,10 @@ class Evenement(models.Model):
 
 
 class Role(models.Model):
+    """
+    Model for the roles, between management, sales, and support,
+    each with a unique name and permissions
+    """
     ROLES = [
         ('management', 'Management'),
         ('sales', 'Sales'),
@@ -69,6 +84,9 @@ class Role(models.Model):
 
 
 class Collaborator(AbstractUser):
+    """
+    Model for a collaborator with a link to a role
+    """
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True)
     employee_number = models.CharField(max_length=50, unique=True)
     is_superuser = models.BooleanField(default=False)

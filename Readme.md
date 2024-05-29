@@ -1,39 +1,56 @@
-# Epic Events
-Ce projet est un CRM à destination de 3 pôles de collaborateurs : commercial, support et gestion.
-Chaque acteur aura la possibilité de lire, modifier ou supprimer des éléments en fonction de son rôle.
+# Epic Events CRM
 
-# Installation
-Assurez-vous d'avoir Python et pip installés sur votre système.
+Epic Events CRM is a command-line application that allows the management of the company's CRM.
+It includes three differents menus depending on the role of the user.
 
-Clonez ce dépôt vers votre machine locale :
+There are three roles:
+- Management
+- Sales
+- Support
 
-```
-git clone https://github.com/AurelienAllenic/epic_events-p12
-cd mon_projet
-```
+Depending on its role, the user will be able to read, create or delete a contract, an event, a client or a collaborator.
 
-Installez les dépendances requises en exécutant :
-```
-pip install -r requirements.txt
-```
-# Configuration
-Configurez votre base de données dans le fichier settings.py.
+Sentry was added to the project to log exceptions and errors.
+Permissions are used to limit the access of the users to the CRM.
+Passwords are encrypted.
 
-Appliquez les migrations nécessaires avec la commande :
-```
-python manage.py migrate
-```
+## Prerequisites
 
-# Utilisation
-Pour démarrer le serveur de développement, exécutez la commande suivante :
-```
-python manage.py runserver
-```
+-SQLAlchemy
+- Create a superuser
+- Click
+- Colorama
+- Django
+- Sentry
 
-L'application sera alors accessible à l'adresse http://127.0.0.1:8000/.
 
-# Endpoints API
-Pas encore d'endpoints délimités
+## Getting Started
 
-# Licence
-Ce projet est sous licence MIT. Consultez le fichier LICENSE pour plus de détails.
+    ### .env file & Sentry
+
+    - Create a .env file at root with the following variables:
+        - DB_NAME
+        - DB_USER
+        - DB_PASSWORD
+        - SENTRY_DSN
+
+    - Create a database and use it in the env file
+    - Create an account at sentry.io and use the DSN in the env file
+
+    ### Initialize the project
+    1.
+    - Open a terminal at root
+    - Create a env (for environment variables) at root
+    - cd ./epic_events
+    - .\env\Scripts\activate
+    - pip install -r requirements.txt
+    -cd ./epic_events_CRM
+    - python manage.py runserver
+    2.
+    - Open an other terminal at root
+    - cd ./epic_events
+    - .\env\Scripts\activate
+    - cd ./epic_events_CRM 
+    - python main.py
+    3.
+    - Type the username and password of the accessible user from the initializer.py file to access its menu
