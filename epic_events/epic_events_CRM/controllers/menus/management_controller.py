@@ -131,6 +131,9 @@ class ManagementController:
                             f" to manage {object_type}.", level="info")
                 self.view_cli.display_error_message(f"You do not have permission to manage {object_type}.")
                 return
+        else :
+            print(f"Invalid object type specified : {object_type}.")
+            return
         # Redirect the user to the appropriate menu or function
         choice = None
         if object_type.lower() == "collaborators" or object_type.lower() == "clients":

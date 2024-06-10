@@ -28,7 +28,7 @@ class GeneralController:
                                 f" to manage {object_type}.", level="info")
                     self.general_view.display_error_message(f"You do not have permission to manage {object_type}.")
                     return
-            if object_type.lower() == "collaborators":
+            elif object_type.lower() == "collaborators":
                 if not self.collaborator.has_perm("crm.manage_collaborators"):
                     capture_message(f"Unauthorized access attempt by collaborator: {self.collaborator.username}"
                                 f" to manage {object_type}.", level="info")
@@ -54,6 +54,9 @@ class GeneralController:
                                     f" to manage {object_type}.", level="info")
                     self.general_view.display_error_message(f"You do not have permission to manage {object_type}.")
                     return
+            else :
+                print(f"Invalid object type specified : {object_type}.")
+                return
             # Check for the kind of object to create
             if object_type.lower() == "collaborators":
                 while True:
@@ -436,6 +439,9 @@ class GeneralController:
 
                 self.general_view.display_error_message(f"You do not have permission to manage {object_type}.")
                 return
+        else :
+            print(f"Invalid object type specified : {object_type}.")
+            return
 
         if object_type.lower() == "clients":
             self.general_view.display_list(objects, object_type)
